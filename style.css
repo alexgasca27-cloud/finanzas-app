@@ -17,3 +17,25 @@
 .credit-card.status-orange::after{background:#ff8a0015}
 .credit-card.status-red::after{background:#ff3b5c15}
 @supports not (color:color-mix(in srgb, red, transparent)){.credit-card{box-shadow:0 0 14px #b6ff0033}.credit-card.status-yellow{box-shadow:0 0 14px #ffe60033}.credit-card.status-orange{box-shadow:0 0 14px #ff8a0038}.credit-card.status-red{box-shadow:0 0 14px #ff3b5c42}}
+
+/* V10 — detalle completo de tarjeta */
+.modal-card{width:min(760px,100%)}
+.card-detail{display:grid;gap:16px}
+.detail-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding-bottom:2px}
+.detail-header h3{font-size:28px;margin:8px 0 0}
+.detail-usage{font-size:26px;font-weight:900;text-align:right;color:var(--detail-neon,#b6ff00)}
+.detail-usage small{display:block;font-size:10px;font-weight:500;color:#818a98;text-transform:uppercase;letter-spacing:1px}
+.card-detail.green{--detail-neon:#b6ff00}.card-detail.yellow{--detail-neon:#ffe600}.card-detail.orange{--detail-neon:#ff8a00}.card-detail.red{--detail-neon:#ff3b5c}
+.detail-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.detail-summary>div,.detail-section,.next-payment,.shared-box{border:1px solid #292f39;background:#10141a;border-radius:15px}
+.detail-summary>div{padding:15px}.detail-summary small,.detail-grid small,.card-detail-row small{display:block;color:#818a98;font-size:11px;margin-bottom:6px}.detail-summary strong{font-size:18px}
+.detail-section{padding:17px}.detail-section-title{font-size:14px;font-weight:800;margin-bottom:13px}.detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.detail-grid>div{padding:12px;border:1px solid #252b35;border-radius:11px}.detail-grid strong{display:block;font-size:14px;color:#fff}.next-payment{padding:17px;display:flex;align-items:baseline;justify-content:space-between;gap:15px}.next-payment strong{font-size:26px;color:var(--detail-neon,#b6ff00)}.next-payment span{color:#a4acb8}.tiny{font-size:11px!important;margin-top:9px}
+.card-detail-list{display:grid;gap:7px}.card-detail-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:11px 12px;border:1px solid #252b35;border-radius:11px}.card-detail-row small{margin:3px 0 0}.shared-box{padding:13px}.shared-box>div:first-child{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.shared-box>div:first-child strong{font-size:20px}.shared-box>div:first-child small{color:#818a98}.member-list.compact{margin-top:0}.member-list.compact .member{padding:9px 11px}
+@media(max-width:600px){.detail-summary{grid-template-columns:1fr}.detail-grid{grid-template-columns:1fr}.detail-header h3{font-size:23px}.next-payment{align-items:flex-start;flex-direction:column}.detail-usage{font-size:21px}}
+
+/* V11 — fechas visibles en tarjetas */
+.card-schedule{position:relative;z-index:1;display:flex;align-items:center;gap:14px;margin-top:9px;padding-top:8px;border-top:1px solid #252c36;color:#707988;font-size:10px;letter-spacing:.1px}
+.card-schedule span{display:inline-flex;gap:3px;align-items:center}
+.card-schedule strong{color:#aab2be;font-weight:600}
+.schedule-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.card-schedule{font-size:10px;gap:10px}.schedule-fields{grid-template-columns:1fr}}
