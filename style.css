@@ -1,4 +1,6 @@
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -26,9 +28,21 @@ body {
   text-align: center;
 }
 
-.logo { font-size: 48px; margin-bottom: 10px; }
-h1 { margin: 0; font-size: 30px; }
-.subtitle { margin: 10px 0 28px; color: #697386; line-height: 1.5; }
+.logo {
+  font-size: 48px;
+  margin-bottom: 10px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.subtitle {
+  margin: 10px 0 28px;
+  color: #697386;
+  line-height: 1.5;
+}
 
 .login-button {
   width: 100%;
@@ -53,11 +67,31 @@ h1 { margin: 0; font-size: 30px; }
   box-shadow: 0 5px 15px rgba(20, 30, 50, .08);
 }
 
-.login-button:disabled { opacity: .65; cursor: wait; }
-.google-icon { font-weight: 700; font-size: 20px; }
-.apple-button { background: #111827; color: #fff; border-color: #111827; }
-.status { min-height: 22px; margin: 18px 0 0; color: #697386; font-size: 14px; }
+.login-button:disabled {
+  opacity: .65;
+  cursor: wait;
+}
+
+.google-icon {
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.apple-button {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+
+.status {
+  min-height: 22px;
+  margin: 18px 0 0;
+  color: #697386;
+  font-size: 14px;
+}
 
 @media (max-width: 480px) {
-  .login-card { padding: 32px 22px; }
+  .login-card {
+    padding: 32px 22px;
+  }
 }

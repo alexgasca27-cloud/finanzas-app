@@ -2,8 +2,9 @@
 
 const SUPABASE_URL = 'https://pghhvymhdfsfedppxquy.supabase.co';
 
-// Pega aquí la Publishable Key de Supabase.
-// NUNCA pongas aquí la Secret Key / service_role.
+// Publishable Key de Supabase.
+// Esta clave está diseñada para poder utilizarse en el frontend.
+// NUNCA uses aquí una Secret Key / service_role.
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_jhL89bDrMEJKsuStNkp0kw_daup7Rna';
 
 const REDIRECT_URL = 'https://alexgasca27-cloud.github.io/finanzas-app/';
@@ -22,21 +23,18 @@ function setStatus(message) {
 }
 
 googleButton.addEventListener('click', async () => {
-  if (SUPABASE_PUBLISHABLE_KEY === 'sb_publishable_jhL89bDrMEJKsuStNkp0kw_daup7Rna') {
-    setStatus('Primero configura la Publishable Key de Supabase en app.js.');
-    return;
-  }
-
   googleButton.disabled = true;
   setStatus('Conectando con Google...');
 
   const { error } = await supabaseClient.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: REDIRECT_URL }
+    options: {
+      redirectTo: REDIRECT_URL
+    }
   });
 
   if (error) {
-    console.error(error);
+    console.error('Error de Google OAuth:', error);
     setStatus('No se pudo iniciar sesión con Google. Inténtalo de nuevo.');
     googleButton.disabled = false;
   }
@@ -50,7 +48,7 @@ async function checkSession() {
   const { data, error } = await supabaseClient.auth.getSession();
 
   if (error) {
-    console.error(error);
+    console.error('Error al consultar la sesión:', error);
     return;
   }
 
@@ -63,7 +61,7 @@ checkSession();
 
 supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' && session) {
-    setStatus(`Sesión iniciada como ${session.user.email || 'usuario'}.`);
     console.log('Usuario autenticado:', session.user);
+    setStatus(`Sesión iniciada como ${session.user.email || 'usuario'}.`);
   }
 });

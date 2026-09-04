@@ -1,17 +1,13 @@
 # Finanzas App — Google Login
 
-Archivos preparados para conectar GitHub Pages con Supabase Auth y Google.
+Versión de prueba con Google OAuth mediante Supabase.
 
-Antes de subirlos a GitHub, abre `app.js` y reemplaza:
-`PEGA_AQUI_TU_PUBLISHABLE_KEY`
-por la Publishable Key de Supabase.
+Configuración:
+- GitHub Pages: https://alexgasca27-cloud.github.io/finanzas-app/
+- Supabase: https://pghhvymhdfsfedppxquy.supabase.co
+- Google OAuth: habilitado
+- Apple: pendiente
 
-NO uses la Secret Key ni service_role en el navegador.
+La Publishable Key está configurada en `app.js`. Las Publishable Keys pueden utilizarse en el frontend; nunca se debe colocar una Secret Key/service_role en código público.
 
-GitHub Pages:
-https://alexgasca27-cloud.github.io/finanzas-app/
-
-Supabase:
-https://pghhvymhdfsfedppxquy.supabase.co
-
-Apple queda pendiente para una siguiente etapa.
+Después de subir los archivos a GitHub, prueba "Continuar con Google".
