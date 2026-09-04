@@ -24,3 +24,10 @@ V25 — PWA instalable
 - Incluye manifest, iconos y service worker.
 - La instalación mantiene el inicio de sesión y la app se abre en modo independiente.
 - Las operaciones con Supabase siguen usando la red; el caché solo cubre la interfaz.
+
+V26 — Duo/Familiar real
+- Los movimientos personales solo son visibles para su creador.
+- Los movimientos marcados como Compartido son visibles para todos los integrantes del espacio.
+- La invitación genera un enlace único de 7 días y abre Gmail con el correo listo para enviar.
+- El invitado inicia sesión con Google usando el correo invitado y queda unido automáticamente al espacio.
+- Al aceptar, el tablero compartido se selecciona automáticamente.

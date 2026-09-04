@@ -187,3 +187,59 @@ alter table public.movements add constraint movements_card_installments_check
 create index if not exists movements_card_installments_idx
   on public.movements(card_id,card_installments)
   where movement_role='card_purchase';
+
+
+-- ============================================================
+-- V26: DUO/FAMILIAR — privacidad personal + invitaciones con enlace
+-- ============================================================
+alter table public.workspace_invitations add column if not exists token text;
+alter table public.workspace_invitations add column if not exists expires_at timestamptz not null default (now() + interval '7 days');
+create unique index if not exists workspace_invitations_token_idx on public.workspace_invitations(token) where token is not null;
+
+-- En un espacio compartido cada integrante ve sus datos personales y los compartidos,
+-- pero no los datos personales de los demás integrantes.
+drop policy if exists "movements workspace data" on public.movements;
+create policy "movements shared or own" on public.movements for all
+using(public.is_workspace_member(workspace_id,auth.uid()) and (is_shared or user_id=auth.uid()))
+with check(public.is_workspace_member(workspace_id,auth.uid()) and (is_shared or user_id=auth.uid()));
+
+drop policy if exists "concepts workspace data" on public.concepts;
+create policy "concepts own or shared workspace" on public.concepts for all
+using(public.is_workspace_member(workspace_id,auth.uid()) and user_id=auth.uid())
+with check(public.is_workspace_member(workspace_id,auth.uid()) and user_id=auth.uid());
+
+drop policy if exists "goals workspace data" on public.savings_goals;
+create policy "goals own workspace" on public.savings_goals for all
+using(public.is_workspace_member(workspace_id,auth.uid()) and user_id=auth.uid())
+with check(public.is_workspace_member(workspace_id,auth.uid()) and user_id=auth.uid());
+
+drop policy if exists "goal contributions workspace data" on public.savings_goal_contributions;
+create policy "goal contributions own workspace" on public.savings_goal_contributions for all
+using(public.is_workspace_member(workspace_id,auth.uid()) and user_id=auth.uid())
+with check(public.is_workspace_member(workspace_id,auth.uid()) and user_id=auth.uid());
+
+-- La invitación solo puede ser creada por el propietario y aceptada por el correo invitado.
+create or replace function public.accept_workspace_invitation(invite_token text)
+returns uuid
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare inv public.workspace_invitations%rowtype;
+begin
+  select * into inv from public.workspace_invitations
+  where token=invite_token and status='pending' and expires_at>now()
+  limit 1;
+  if not found then raise exception 'La invitación no existe, ya fue usada o expiró.'; end if;
+  if lower(inv.invited_email) <> lower((select email from auth.users where id=auth.uid())) then
+    raise exception 'Inicia sesión con el mismo correo al que se envió la invitación.';
+  end if;
+  insert into public.workspace_members(workspace_id,user_id,role)
+  values(inv.workspace_id,auth.uid(),'member')
+  on conflict (workspace_id,user_id) do nothing;
+  update public.workspace_invitations set status='accepted' where id=inv.id;
+  return inv.workspace_id;
+end;
+$$;
+revoke all on function public.accept_workspace_invitation(text) from public;
+grant execute on function public.accept_workspace_invitation(text) to authenticated;

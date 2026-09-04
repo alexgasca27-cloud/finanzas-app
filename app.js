@@ -1,7 +1,7 @@
 const SUPABASE_URL="https://pghhvymhdfsfedppxquy.supabase.co";
 const SUPABASE_KEY="sb_publishable_jhL89bDrMEJKsuStNkp0kw_daup7Rna";
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const state={user:null,profile:null,workspace:null,members:[],movements:[],cards:[],concepts:[],goals:[],goalContributions:[],month:new Date(),movementFilter:"all"};
+const state={user:null,profile:null,workspace:null,members:[],workspaces:[],movements:[],cards:[],concepts:[],goals:[],goalContributions:[],month:new Date(),movementFilter:"all"};
 const $=s=>document.querySelector(s);
 const money=n=>new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(Number(n||0));
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
@@ -19,7 +19,7 @@ function notify(m){alert(m)}
 
 async function init(){const {data:{session}}=await db.auth.getSession();if(session)await setUser(session.user);else showLogin();db.auth.onAuthStateChange(async(_,s)=>{if(s)await setUser(s.user);else showLogin()})}
 function showLogin(){$("#loginView").classList.remove("hidden");$("#dashboardView").classList.add("hidden")}
-async function setUser(u){state.user=u;$("#loginView").classList.add("hidden");$("#dashboardView").classList.remove("hidden");$("#userEmail").textContent=u.email||"";$("#userAvatar").textContent=(u.email||"U")[0].toUpperCase();$("#welcomeTitle").textContent=`Hola, ${u.user_metadata?.full_name?.split(" ")[0]||u.email?.split("@")[0]||"usuario"} 👋`;await ensureProfile();await loadAll()}
+async function setUser(u){state.user=u;$("#loginView").classList.add("hidden");$("#dashboardView").classList.remove("hidden");$("#userEmail").textContent=u.email||"";$("#userAvatar").textContent=(u.email||"U")[0].toUpperCase();$("#welcomeTitle").textContent=`Hola, ${u.user_metadata?.full_name?.split(" ")[0]||u.email?.split("@")[0]||"usuario"} 👋`;await ensureProfile();await handlePendingInvite();await loadAll()}
 
 async function ensureProfile(){
  const {data}=await db.from("profiles").select("*").eq("id",state.user.id).maybeSingle();
@@ -28,18 +28,31 @@ async function ensureProfile(){
  if(error){console.warn(error);return}state.profile=p;
 }
 async function ensureWorkspace(){
- let {data,error}=await db.from("workspace_members").select("workspace_id,role,workspaces(*)").eq("user_id",state.user.id).order("created_at",{ascending:true}).limit(1).maybeSingle();
+ let {data,error}=await db.from("workspace_members").select("workspace_id,role,workspaces(*)").eq("user_id",state.user.id).order("created_at",{ascending:true});
  if(error){console.warn(error);return}
- if(!data){
+ const rows=data||[];state.workspaces=rows.map(x=>x.workspaces).filter(Boolean);
+ if(!rows.length){
    const {data:w,error:we}=await db.from("workspaces").insert({name:state.profile?.display_name||"Mis finanzas",type:"individual",owner_id:state.user.id}).select().single();
    if(we){console.warn(we);return}
    const {data:m,error:me}=await db.from("workspace_members").insert({workspace_id:w.id,user_id:state.user.id,role:"owner"}).select().single();
    if(me){console.warn(me);return}
-   data={workspace_id:w.id,role:"owner",workspaces:w};
+   rows.push({workspace_id:w.id,role:"owner",workspaces:w});state.workspaces=[w];
  }
- state.workspace=data.workspaces;
+ const saved=localStorage.getItem("finanzas_active_workspace");
+ const selected=rows.find(x=>x.workspace_id===saved)||rows[0];
+ state.workspace=selected.workspaces;
  const {data:members}=await db.from("workspace_members").select("user_id,role,profiles(display_name,email)").eq("workspace_id",state.workspace.id);
- state.members=members||[];updateWorkspaceUI();
+ state.members=members||[];localStorage.setItem("finanzas_active_workspace",state.workspace.id);updateWorkspaceUI();
+}
+async function handlePendingInvite(){
+ const token=new URLSearchParams(location.search).get("invite")||sessionStorage.getItem("finanzas_pending_invite");
+ if(!token)return;
+ sessionStorage.setItem("finanzas_pending_invite",token);
+ const {data,error}=await db.rpc("accept_workspace_invitation",{invite_token:token});
+ if(error){notify("No se pudo aceptar la invitación: "+error.message);return}
+ if(data){localStorage.setItem("finanzas_active_workspace",data);sessionStorage.removeItem("finanzas_pending_invite");
+   history.replaceState({},document.title,location.pathname);notify("🎉 Invitación aceptada. Ya estás dentro del espacio compartido.");
+ }
 }
 function updateWorkspaceUI(){
  const w=state.workspace,mode=w?.type||"individual",label=mode==="duo"?"👥 Duo":mode==="family"?"👨‍👩‍👧‍👦 Familiar":"👤 Individual";
@@ -317,8 +330,29 @@ async function markCardPaid(id){
 }
 
 function workspaceForm(){const mode=state.workspace?.type||"individual";showModal(`<div class="form"><h3>Espacio financiero</h3><p class="muted">Tus datos se comparten únicamente con integrantes de este espacio.</p><div class="choice-grid"><button type="button" class="choice ${mode==="individual"?"selected":""}" data-mode="individual"><strong>👤 Individual</strong><span>Solo tú.</span></button><button type="button" class="choice ${mode==="duo"?"selected":""}" data-mode="duo"><strong>👥 Duo</strong><span>Dos integrantes.</span></button><button type="button" class="choice ${mode==="family"?"selected":""}" data-mode="family"><strong>👨‍👩‍👧‍👦 Familiar</strong><span>Varios integrantes.</span></button></div><label>Nombre del espacio<input id="wName" value="${esc(state.workspace?.name||"")}"></label><div class="invite-box"><strong>Integrantes</strong><div class="member-list">${state.members.map(m=>`<div class="member"><span>${esc(m.profiles?.display_name||m.profiles?.email||"Integrante")}</span><small>${esc(m.role)}</small></div>`).join("")}</div></div><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button id="saveWorkspace" class="primary-btn">Guardar</button></div></div>`);let selected=mode;document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>{selected=b.dataset.mode;document.querySelectorAll(".choice").forEach(x=>x.classList.toggle("selected",x.dataset.mode===selected))});$("#saveWorkspace").onclick=async()=>{const {error}=await db.from("workspaces").update({type:selected,name:$("#wName").value.trim()||null}).eq("id",state.workspace.id);if(error)return notify(error.message);closeModal();loadAll()}}
-function inviteForm(){if(state.workspace?.type==="individual")return notify("Primero cambia tu espacio a Duo o Familiar.");showModal(`<form class="form" id="inviteForm"><h3>Invitar integrante</h3><p class="muted">La persona conservará su propia cuenta de Google.</p><label>Correo electrónico<input id="inviteEmail" type="email" required placeholder="persona@gmail.com"></label><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Crear invitación</button></div></form>`);$("#inviteForm").onsubmit=async e=>{e.preventDefault();const {error}=await db.from("workspace_invitations").insert({workspace_id:state.workspace.id,invited_email:$("#inviteEmail").value.trim().toLowerCase(),invited_by:state.user.id});if(error)return notify(error.message);closeModal();notify("Invitación creada. La aceptación automática y el envío por correo serán el siguiente paso.")}}
-$("#googleLogin").onclick=async()=>{const {error}=await db.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname}});if(error)$("#loginMessage").textContent=error.message};
+async function inviteForm(){
+ if(state.workspace?.type==="individual")return notify("Primero cambia tu espacio a Duo o Familiar.");
+ const max=state.workspace?.type==="duo"?2:99;
+ if(state.members.length>=max)return notify(state.workspace?.type==="duo"?"Tu espacio Duo ya tiene dos integrantes.":"No puedes agregar más integrantes.");
+ showModal(`<form class="form" id="inviteForm"><h3>Invitar integrante</h3><p class="muted">La persona recibirá un enlace para iniciar sesión con Google y unirse a este tablero. Tus datos personales no serán visibles para ella; solo verá lo compartido.</p><label>Correo electrónico<input id="inviteEmail" type="email" required placeholder="persona@gmail.com"></label><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Generar invitación</button></div></form>`);
+ $("#inviteForm").onsubmit=async e=>{
+   e.preventDefault();
+   const email=$("#inviteEmail").value.trim().toLowerCase();
+   if(email===String(state.user.email||"").toLowerCase())return notify("No puedes invitar tu propio correo.");
+   const token=crypto.randomUUID();
+   const expires=new Date(Date.now()+7*86400000).toISOString();
+   const {error}=await db.from("workspace_invitations").insert({workspace_id:state.workspace.id,invited_email:email,invited_by:state.user.id,token,expires_at:expires});
+   if(error)return notify(error.message);
+   const link=`${location.origin}${location.pathname}?invite=${encodeURIComponent(token)}`;
+   const subject=`Invitación a ${state.workspace.name||"Finanzas App"}`;
+   const body=`Hola!\n\nTe invito a unirte a mi espacio compartido de Finanzas App.\n\nAbre este enlace, inicia sesión con Google usando ${email} y acepta la invitación:\n${link}\n\nPodremos ver los gastos e ingresos compartidos, pero cada persona conservará sus movimientos personales privados.\n\nLa invitación vence en 7 días.`;
+   const gmail=`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+   closeModal();
+   window.open(gmail,"_blank","noopener");
+   notify("Invitación generada. Se abrió Gmail con el correo listo para enviar.");
+ };
+}
+$("#googleLogin").onclick=async()=>{const {error}=await db.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname+location.search}});if(error)$("#loginMessage").textContent=error.message};
 $("#logoutBtn").onclick=()=>db.auth.signOut();$("#modalClose").onclick=closeModal;$(".modal-backdrop").onclick=closeModal;
 $("#workspaceBtn").onclick=workspaceForm;$("#workspaceSideBtn").onclick=workspaceForm;$("#inviteBtn").onclick=inviteForm;$("#addIncomeBtn").onclick=()=>movementForm(null,"income");$("#addExpenseBtn").onclick=()=>movementForm(null,"expense");$("#addCardBtn").onclick=cardForm;$("#addConceptBtn").onclick=conceptForm;$("#addGoalBtn").onclick=goalForm;
 $("#prevMonth").onclick=()=>{state.month.setMonth(state.month.getMonth()-1);render()};$("#nextMonth").onclick=()=>{state.month.setMonth(state.month.getMonth()+1);render()};
