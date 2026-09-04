@@ -339,6 +339,8 @@ async function inviteForm(){
    e.preventDefault();
    const email=$("#inviteEmail").value.trim().toLowerCase();
    if(email===String(state.user.email||"").toLowerCase())return notify("No puedes invitar tu propio correo.");
+   const {data:{session}}=await db.auth.getSession();
+   if(!session)return notify("Tu sesión expiró. Inicia sesión nuevamente para enviar la invitación.");
    const button=$("#inviteForm button.primary-btn");
    if(button){button.disabled=true;button.textContent="Enviando…";}
    const {data,error}=await db.functions.invoke("send-invitation",{

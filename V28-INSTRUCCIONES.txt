@@ -1,0 +1,16 @@
+FINANZAS APP V28 — CORRECCIÓN DE INVITACIONES
+
+Problema corregido:
+La Edge Function estaba buscando ctx.userClaims.sub. En la versión actual de @supabase/server, userClaims expone el id del usuario; el sub está en jwtClaims. Por eso la función devolvía “No se pudo identificar al usuario” aunque la sesión existía.
+
+Cambios:
+- send-invitation usa ctx.userClaims.id.
+- Se valida la sesión en el frontend antes de invocar la función.
+- Se valida que el workspace enviado pertenezca al usuario autenticado.
+- Se evita crear invitaciones pendientes duplicadas para el mismo correo.
+- Se mantiene RESEND_API_KEY exclusivamente como Secret de Supabase.
+
+IMPORTANTE:
+1. Primero actualiza la Edge Function send-invitation con el index.ts incluido en este paquete y pulsa Deploy updates.
+2. Después reemplaza en GitHub los archivos del paquete principal por los archivos de V28.
+3. No cambies RESEND_API_KEY.
