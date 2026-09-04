@@ -1,5 +1,9 @@
-# Finanzas App V18
+# Finanzas App V19
 
-Incluye el detalle mejorado de MSI para tarjetas de crédito: cada compra muestra monto original, mensualidad, mensualidades por pagar, fecha de término y progreso programado. También separa compras normales y MSI en el resumen y corrige el redondeo de la última mensualidad para que cada compra sume exactamente su monto original.
-
-No requiere cambios adicionales en Supabase respecto a V16.
+Actualización sobre V18:
+- Las tarjetas departamentales ahora soportan compras a meses sin intereses.
+- Al seleccionar método Departamental aparece selector de 1, 3, 6, 9, 12, 18 o 24 meses.
+- Las compras departamentales con más de 1 mes se muestran en el detalle como MSI, con mensualidad, progreso y calendario.
+- Kueski mantiene su lógica independiente de 1 a 12 quincenas.
+- Tarjetas de crédito mantienen su lógica MSI.
+- No requiere cambios adicionales en Supabase; usa `card_installments` ya existente.
