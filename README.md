@@ -17,3 +17,10 @@
 - Historial de aportaciones por meta.
 - No requiere fecha objetivo manual.
 - Requiere ejecutar la sección V23 del `supabase.sql` una vez.
+
+
+V25 — PWA instalable
+- Finanzas App funciona como PWA instalable desde Android/Chrome y iPhone/Safari.
+- Incluye manifest, iconos y service worker.
+- La instalación mantiene el inicio de sesión y la app se abre en modo independiente.
+- Las operaciones con Supabase siguen usando la red; el caché solo cubre la interfaz.
