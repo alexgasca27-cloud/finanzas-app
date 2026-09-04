@@ -334,22 +334,32 @@ async function inviteForm(){
  if(state.workspace?.type==="individual")return notify("Primero cambia tu espacio a Duo o Familiar.");
  const max=state.workspace?.type==="duo"?2:99;
  if(state.members.length>=max)return notify(state.workspace?.type==="duo"?"Tu espacio Duo ya tiene dos integrantes.":"No puedes agregar más integrantes.");
- showModal(`<form class="form" id="inviteForm"><h3>Invitar integrante</h3><p class="muted">La persona recibirá un enlace para iniciar sesión con Google y unirse a este tablero. Tus datos personales no serán visibles para ella; solo verá lo compartido.</p><label>Correo electrónico<input id="inviteEmail" type="email" required placeholder="persona@gmail.com"></label><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Generar invitación</button></div></form>`);
+ showModal(`<form class="form" id="inviteForm"><h3>Invitar integrante</h3><p class="muted">La persona recibirá un correo con un enlace para iniciar sesión con Google y unirse a este tablero. Tus datos personales no serán visibles para ella; solo verá lo compartido.</p><label>Correo electrónico<input id="inviteEmail" type="email" required placeholder="persona@gmail.com"></label><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Enviar invitación</button></div></form>`);
  $("#inviteForm").onsubmit=async e=>{
    e.preventDefault();
    const email=$("#inviteEmail").value.trim().toLowerCase();
    if(email===String(state.user.email||"").toLowerCase())return notify("No puedes invitar tu propio correo.");
-   const token=crypto.randomUUID();
-   const expires=new Date(Date.now()+7*86400000).toISOString();
-   const {error}=await db.from("workspace_invitations").insert({workspace_id:state.workspace.id,invited_email:email,invited_by:state.user.id,token,expires_at:expires});
-   if(error)return notify(error.message);
-   const link=`${location.origin}${location.pathname}?invite=${encodeURIComponent(token)}`;
-   const subject=`Invitación a ${state.workspace.name||"Finanzas App"}`;
-   const body=`Hola!\n\nTe invito a unirte a mi espacio compartido de Finanzas App.\n\nAbre este enlace, inicia sesión con Google usando ${email} y acepta la invitación:\n${link}\n\nPodremos ver los gastos e ingresos compartidos, pero cada persona conservará sus movimientos personales privados.\n\nLa invitación vence en 7 días.`;
-   const gmail=`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+   const button=$("#inviteForm button.primary-btn");
+   if(button){button.disabled=true;button.textContent="Enviando…";}
+   const {data,error}=await db.functions.invoke("send-invitation",{
+     body:{email,workspace_id:state.workspace.id}
+   });
+   if(button){button.disabled=false;button.textContent="Enviar invitación";}
+   if(error){
+     console.error("send-invitation:",error);
+     let msg=error.message||"No se pudo enviar la invitación.";
+     try{
+       const ctx=error.context;
+       if(ctx?.json) {
+         const details=await ctx.json();
+         if(details?.message)msg=details.message;
+       }
+     }catch(_){}
+     return notify(msg);
+   }
+   if(!data?.ok)return notify(data?.message||"No se pudo enviar la invitación.");
    closeModal();
-   window.open(gmail,"_blank","noopener");
-   notify("Invitación generada. Se abrió Gmail con el correo listo para enviar.");
+   notify("✉️ Invitación enviada. La persona recibirá el correo para unirse a tu espacio.");
  };
 }
 $("#googleLogin").onclick=async()=>{const {error}=await db.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname+location.search}});if(error)$("#loginMessage").textContent=error.message};

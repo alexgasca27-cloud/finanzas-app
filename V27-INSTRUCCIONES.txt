@@ -1,0 +1,9 @@
+FINANZAS APP V27 — INVITACIONES AUTOMÁTICAS
+
+1. Ya debes tener desplegada la Edge Function `send-invitation`.
+2. Ya debes tener el Secret `RESEND_API_KEY` en Supabase.
+3. Ya debes haber ejecutado el SQL V27 para invitaciones/privacidad.
+4. Sube TODOS los archivos de esta carpeta a la rama `main` de tu repositorio GitHub Pages, reemplazando los existentes.
+5. No cambies la clave de Supabase ni pongas la API de Resend en estos archivos.
+6. La app ahora llama a la Edge Function y ya no abre Gmail.
+7. En producción, configura un dominio/remitente verificado en Resend y añade opcionalmente el Secret `RESEND_FROM_EMAIL` en Supabase.
