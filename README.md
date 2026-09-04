@@ -1,9 +1,13 @@
-# Finanzas App V13
+# Finanzas App V16
 
-Basada en V12. Añade calendario de pagos Kueski en el detalle de la tarjeta.
+Incluye:
+- Todo lo de V15.
+- MSI para compras con Tarjeta de crédito.
+- Opciones: compra normal, 3, 6, 9, 12, 18 o 24 meses sin intereses.
+- El total de la compra ocupa crédito desde el momento de la compra.
+- El dinero disponible no disminuye por la compra a crédito; disminuye cuando se registra el pago de la tarjeta.
+- Cálculo de mensualidad.
+- Calendario de mensualidades futuras según día de corte y día de pago.
+- Identificación de MSI en movimientos recientes y detalle de tarjeta.
 
-- Agrupa las quincenas por fecha de pago.
-- Muestra total por fecha.
-- Muestra qué compras integran cada pago.
-- Muestra número de quincena (ej. 1/6).
-- No requiere cambios adicionales en Supabase respecto a V12.
+Antes de usar MSI, ejecutar el `supabase.sql` completo en Supabase. Es seguro porque usa `IF NOT EXISTS` y agrega únicamente la columna/constraint necesarios.

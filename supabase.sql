@@ -155,3 +155,12 @@ alter table public.movements drop constraint if exists movements_kueski_installm
 alter table public.movements add constraint movements_kueski_installments_check check (kueski_installments is null or kueski_installments between 1 and 12);
 create index if not exists movements_kueski_idx on public.movements(card_id,kueski_installments) where movement_role='kueski_purchase';
 
+
+-- V16: meses sin intereses (MSI) para tarjetas de crédito
+alter table public.movements add column if not exists card_installments integer;
+alter table public.movements drop constraint if exists movements_card_installments_check;
+alter table public.movements add constraint movements_card_installments_check
+  check (card_installments is null or card_installments between 1 and 24);
+create index if not exists movements_card_installments_idx
+  on public.movements(card_id,card_installments)
+  where movement_role='card_purchase';
