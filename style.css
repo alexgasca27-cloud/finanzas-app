@@ -56,3 +56,5 @@
   .sidebar-actions .logout{justify-content:center;padding:12px 8px}
   .sidebar-actions .side-action-label{display:none}
 }
+
+.msi-box{padding:12px 14px;border:1px solid #b6ff00;border-radius:12px;background:#11170d;box-shadow:0 0 12px #b6ff0012}.msi-box strong{display:block;color:#b6ff00;margin-bottom:2px}.msi-box select{margin-top:7px}.msi-box .form-help{display:block;margin-top:7px}

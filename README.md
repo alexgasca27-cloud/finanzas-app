@@ -11,3 +11,6 @@ Incluye:
 - Identificación de MSI en movimientos recientes y detalle de tarjeta.
 
 Antes de usar MSI, ejecutar el `supabase.sql` completo en Supabase. Es seguro porque usa `IF NOT EXISTS` y agrega únicamente la columna/constraint necesarios.
+
+
+V16.1: cache-bust de app.js y campo MSI resaltado para tarjetas de crédito.
