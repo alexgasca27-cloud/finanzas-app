@@ -4,7 +4,7 @@ const SUPABASE_URL = 'https://pghhvymhdfsfedppxquy.supabase.co';
 
 // Pega aquí la Publishable Key de Supabase.
 // NUNCA pongas aquí la Secret Key / service_role.
-const SUPABASE_PUBLISHABLE_KEY = 'PEGA_AQUI_TU_PUBLISHABLE_KEY';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_jhL89bDrMEJKsuStNkp0kw_daup7Rna';
 
 const REDIRECT_URL = 'https://alexgasca27-cloud.github.io/finanzas-app/';
 
@@ -22,7 +22,7 @@ function setStatus(message) {
 }
 
 googleButton.addEventListener('click', async () => {
-  if (SUPABASE_PUBLISHABLE_KEY === 'PEGA_AQUI_TU_PUBLISHABLE_KEY') {
+  if (SUPABASE_PUBLISHABLE_KEY === 'sb_publishable_jhL89bDrMEJKsuStNkp0kw_daup7Rna') {
     setStatus('Primero configura la Publishable Key de Supabase en app.js.');
     return;
   }
