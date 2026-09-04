@@ -1,9 +1,11 @@
-# Finanzas App V19
+# Finanzas App V20
 
-Actualización sobre V18:
-- Las tarjetas departamentales ahora soportan compras a meses sin intereses.
-- Al seleccionar método Departamental aparece selector de 1, 3, 6, 9, 12, 18 o 24 meses.
-- Las compras departamentales con más de 1 mes se muestran en el detalle como MSI, con mensualidad, progreso y calendario.
-- Kueski mantiene su lógica independiente de 1 a 12 quincenas.
-- Tarjetas de crédito mantienen su lógica MSI.
-- No requiere cambios adicionales en Supabase; usa `card_installments` ya existente.
+Incluye todo lo de V19 y agrega:
+- Editar tarjetas desde su detalle.
+- Modificar nombre, límite de crédito y fechas de corte/pago.
+- Kueski: solo día de pago.
+- Tarjeta de crédito/departamental: día de corte y día de pago.
+- Eliminar tarjeta con confirmación.
+- Al eliminar una tarjeta, sus movimientos se conservan como historial y quedan desvinculados de la tarjeta (por la relación ON DELETE SET NULL).
+
+No requiere SQL nuevo.
