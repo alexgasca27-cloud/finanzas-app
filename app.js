@@ -1,11 +1,7 @@
-// FINANZAS APP - SUPABASE AUTH + DASHBOARD
+// FINANZAS APP - SUPABASE AUTH
 
 const SUPABASE_URL = 'https://pghhvymhdfsfedppxquy.supabase.co';
-
-// Publishable Key de Supabase.
-// Nunca colocar aquí una Secret Key / service_role.
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_jhL89bDrMEJKsuStNkp0kw_daup7Rna';
-
 const REDIRECT_URL = 'https://alexgasca27-cloud.github.io/finanzas-app/';
 
 const supabaseClient = window.supabase.createClient(
@@ -19,11 +15,13 @@ const googleButton = document.getElementById('google-login');
 const appleButton = document.getElementById('apple-login');
 const logoutButton = document.getElementById('logout-button');
 const loginStatus = document.getElementById('login-status');
-const welcomeText = document.getElementById('welcome-text');
+const userName = document.getElementById('user-name');
+const userEmail = document.getElementById('user-email');
 
-function showLogin() {
+function showLogin(message = '') {
   loginScreen.classList.remove('hidden');
   dashboardScreen.classList.add('hidden');
+  loginStatus.textContent = message;
 }
 
 function showDashboard(user) {
@@ -31,12 +29,12 @@ function showDashboard(user) {
   dashboardScreen.classList.remove('hidden');
 
   const name =
-    user.user_metadata?.full_name ||
-    user.user_metadata?.name ||
-    user.email ||
-    'usuario';
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    '';
 
-  welcomeText.textContent = `Sesión activa: ${name}`;
+  userName.textContent = name ? `, ${name.split(' ')[0]}` : '';
+  userEmail.textContent = user?.email || '';
 }
 
 googleButton.addEventListener('click', async () => {
@@ -51,7 +49,7 @@ googleButton.addEventListener('click', async () => {
   });
 
   if (error) {
-    console.error('Error Google OAuth:', error);
+    console.error('Google OAuth:', error);
     loginStatus.textContent = 'No se pudo iniciar sesión con Google.';
     googleButton.disabled = false;
   }
@@ -62,33 +60,19 @@ appleButton.addEventListener('click', () => {
 });
 
 logoutButton.addEventListener('click', async () => {
+  logoutButton.disabled = true;
+
   const { error } = await supabaseClient.auth.signOut();
 
   if (error) {
-    console.error('Error al cerrar sesión:', error);
+    console.error('Sign out:', error);
+    logoutButton.disabled = false;
     return;
   }
 
-  showLogin();
-  loginStatus.textContent = 'Sesión cerrada correctamente.';
-  googleButton.disabled = false;
+  logoutButton.disabled = false;
+  showLogin('Sesión cerrada correctamente.');
 });
-
-async function initializeApp() {
-  const { data, error } = await supabaseClient.auth.getSession();
-
-  if (error) {
-    console.error('Error al obtener sesión:', error);
-    showLogin();
-    return;
-  }
-
-  if (data.session) {
-    showDashboard(data.session.user);
-  } else {
-    showLogin();
-  }
-}
 
 supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' && session) {
@@ -99,5 +83,21 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     showLogin();
   }
 });
+
+async function initializeApp() {
+  const { data, error } = await supabaseClient.auth.getSession();
+
+  if (error) {
+    console.error('Session:', error);
+    showLogin('No pudimos comprobar tu sesión.');
+    return;
+  }
+
+  if (data.session) {
+    showDashboard(data.session.user);
+  } else {
+    showLogin();
+  }
+}
 
 initializeApp();
