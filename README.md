@@ -1,59 +1,22 @@
-# Finanzas App v3
+# Finanzas App V5 — Individual / Duo / Familiar
 
-Primera versión funcional sobre GitHub Pages + Supabase.
+1. En Supabase > SQL Editor ejecuta TODO `supabase.sql`.
+2. Si muestra "Success. No rows returned", está correcto.
+3. Reemplaza en GitHub `index.html`, `style.css` y `app.js`.
+4. Recarga la app.
 
-## 1. Base de datos
-En Supabase abre SQL Editor y ejecuta `supabase.sql` completo.
+Esta versión agrega la base del sistema de espacios financieros:
+- Individual
+- Duo
+- Familiar
+- Integrantes con cuentas propias
+- Invitaciones almacenadas en Supabase
+- Datos ligados a un espacio compartido
+- RLS por espacio
+- Creación automática de espacio individual si no existe
 
-Esto crea:
-- perfiles
-- movimientos
-- tarjetas/créditos
-- conceptos
-- metas de ahorro
-- RLS por usuario
-- conceptos iniciales
+Importante: el envío real de correo y la aceptación automática de invitaciones se implementarán con una Edge Function en la siguiente etapa. No se expone ninguna clave privada en el frontend.
 
-## 2. GitHub Pages
-Reemplaza en tu repositorio los archivos:
-- index.html
-- style.css
-- app.js
-- supabase.sql
 
-No es necesario subir `.env`.
-
-## 3. Supabase Auth
-Ya utiliza:
-- Google
-
-Redirect URL:
-https://alexgasca27-cloud.github.io/finanzas-app/
-
-## 4. Seguridad
-La clave incluida en `app.js` es la publishable key de Supabase, diseñada para uso público en frontend. Nunca coloques aquí una Secret key/service_role, contraseña de base de datos o API privada de IA.
-
-## 5. Estado de esta versión
-Esta versión implementa la primera base funcional:
-- login Google
-- dashboard
-- ingresos/gastos
-- conceptos
-- tarjetas
-- metas de ahorro
-- resumen mensual
-- edición/eliminación durante 24 h en interfaz
-- clasificación personal/compartido
-- separación de compra con crédito frente a salida real de dinero
-
-La siguiente fase debe construir la lógica financiera completa:
-- ciclos de tarjeta y pagos
-- MSI
-- Kueski por quincenas
-- pagos que liberan crédito sin reiniciar el saldo incorrectamente
-- Duo/Familiar y reparto por persona
-- saldo acumulado entre meses
-- estados de cuenta
-- alertas de vencimientos
-- calificador mensual más avanzado
-- IA mediante backend/Edge Function, nunca exponiendo la API key en el navegador.
+## V6 — Lógica financiera base
+Añade saldo acumulado, distingue salidas reales de compras a crédito, y calcula la deuda de cada tarjeta a partir de compras y pagos. MSI y Kueski por quincenas quedan para la siguiente capa.

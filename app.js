@@ -1,182 +1,115 @@
-const SUPABASE_URL = "https://pghhvymhdfsfedppxquy.supabase.co";
-const SUPABASE_KEY = "sb_publishable_jhL89bDrMEJKsuStNkp0kw_daup7Rna";
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const state = {
-  user: null,
-  profile: null,
-  movements: [],
-  cards: [],
-  concepts: [],
-  goals: [],
-  month: new Date(),
-  movementFilter: "all"
-};
-
-const $ = (s) => document.querySelector(s);
-const money = (n) => new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(Number(n||0));
-const monthKey = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-01`;
-const monthLabel = (d) => d.toLocaleDateString("es-MX",{month:"long",year:"numeric"});
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-const within24h = (created) => Date.now() - new Date(created).getTime() < 86400000;
-
-function showModal(html){$("#modalContent").innerHTML=html;$("#modal").classList.remove("hidden")}
+const SUPABASE_URL="https://pghhvymhdfsfedppxquy.supabase.co";
+const SUPABASE_KEY="sb_publishable_jhL89bDrMEJKsuStNkp0kw_daup7Rna";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const state={user:null,profile:null,workspace:null,members:[],movements:[],cards:[],concepts:[],goals:[],month:new Date(),movementFilter:"all"};
+const $=s=>document.querySelector(s);
+const money=n=>new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(Number(n||0));
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+const monthKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+const monthLabel=d=>d.toLocaleDateString("es-MX",{month:"long",year:"numeric"});
+const todayISO=()=>new Date().toISOString().slice(0,10);
+const isRealOutflow=x=>x.type==="expense" && (["debit","cash"].includes(x.payment_method)||["card_payment","kueski_payment"].includes(x.movement_role));
+const accumulatedBalance=until=>state.movements.filter(x=>x.transaction_date<=until).reduce((sum,x)=>sum+(x.type==="income"?Number(x.amount):isRealOutflow(x)?-Number(x.amount):0),0);
+const cardUsed=cid=>Math.max(0,state.movements.filter(x=>x.card_id===cid).reduce((sum,x)=>sum+(["card_purchase","kueski_purchase"].includes(x.movement_role)?Number(x.amount):["card_payment","kueski_payment"].includes(x.movement_role)?-Number(x.amount):0),0));
+const within24h=c=>Date.now()-new Date(c).getTime()<86400000;
+function showModal(h){$("#modalContent").innerHTML=h;$("#modal").classList.remove("hidden")}
 function closeModal(){$("#modal").classList.add("hidden")}
-function notify(msg){alert(msg)}
+function notify(m){alert(m)}
 
-async function init(){
-  const {data:{session}} = await db.auth.getSession();
-  if(session) await setUser(session.user);
-  else showLogin();
-  db.auth.onAuthStateChange(async (_event, session)=>{ if(session) await setUser(session.user); else showLogin(); });
-}
+async function init(){const {data:{session}}=await db.auth.getSession();if(session)await setUser(session.user);else showLogin();db.auth.onAuthStateChange(async(_,s)=>{if(s)await setUser(s.user);else showLogin()})}
 function showLogin(){$("#loginView").classList.remove("hidden");$("#dashboardView").classList.add("hidden")}
-async function setUser(user){
-  state.user=user;
-  $("#loginView").classList.add("hidden"); $("#dashboardView").classList.remove("hidden");
-  $("#userEmail").textContent=user.email||"";
-  $("#userAvatar").textContent=(user.email||"U").charAt(0).toUpperCase();
-  $("#welcomeTitle").textContent=`Hola, ${user.user_metadata?.full_name?.split(" ")[0] || user.email?.split("@")[0] || "usuario"} 👋`;
-  await ensureProfile();
-  await loadAll();
-}
+async function setUser(u){state.user=u;$("#loginView").classList.add("hidden");$("#dashboardView").classList.remove("hidden");$("#userEmail").textContent=u.email||"";$("#userAvatar").textContent=(u.email||"U")[0].toUpperCase();$("#welcomeTitle").textContent=`Hola, ${u.user_metadata?.full_name?.split(" ")[0]||u.email?.split("@")[0]||"usuario"} 👋`;await ensureProfile();await loadAll()}
+
 async function ensureProfile(){
-  const {data} = await db.from("profiles").select("*").eq("id",state.user.id).maybeSingle();
-  if(data){state.profile=data;return}
-  const {data:newProfile,error}=await db.from("profiles").insert({id:state.user.id,email:state.user.email,display_name:state.user.user_metadata?.full_name||state.user.email?.split("@")[0]}).select().single();
-  if(!error) state.profile=newProfile;
+ const {data}=await db.from("profiles").select("*").eq("id",state.user.id).maybeSingle();
+ if(data){state.profile=data;return}
+ const {data:p,error}=await db.from("profiles").insert({id:state.user.id,email:state.user.email,display_name:state.user.user_metadata?.full_name||state.user.email?.split("@")[0]}).select().single();
+ if(error){console.warn(error);return}state.profile=p;
+}
+async function ensureWorkspace(){
+ let {data,error}=await db.from("workspace_members").select("workspace_id,role,workspaces(*)").eq("user_id",state.user.id).order("created_at",{ascending:true}).limit(1).maybeSingle();
+ if(error){console.warn(error);return}
+ if(!data){
+   const {data:w,error:we}=await db.from("workspaces").insert({name:state.profile?.display_name||"Mis finanzas",type:"individual",owner_id:state.user.id}).select().single();
+   if(we){console.warn(we);return}
+   const {data:m,error:me}=await db.from("workspace_members").insert({workspace_id:w.id,user_id:state.user.id,role:"owner"}).select().single();
+   if(me){console.warn(me);return}
+   data={workspace_id:w.id,role:"owner",workspaces:w};
+ }
+ state.workspace=data.workspaces;
+ const {data:members}=await db.from("workspace_members").select("user_id,role,profiles(display_name,email)").eq("workspace_id",state.workspace.id);
+ state.members=members||[];updateWorkspaceUI();
+}
+function updateWorkspaceUI(){
+ const w=state.workspace,mode=w?.type||"individual",label=mode==="duo"?"👥 Duo":mode==="family"?"👨‍👩‍👧‍👦 Familiar":"👤 Individual";
+ $("#workspaceBtn").textContent=label+(w?.name?` · ${w.name}`:"");$("#inviteBtn").classList.toggle("hidden",mode==="individual");
 }
 async function loadAll(){
-  const [m,c,co,g] = await Promise.all([
-    db.from("movements").select("*").order("created_at",{ascending:false}),
-    db.from("cards").select("*").order("created_at",{ascending:false}),
-    db.from("concepts").select("*").order("name"),
-    db.from("savings_goals").select("*").order("created_at",{ascending:false})
-  ]);
-  state.movements=m.data||[]; state.cards=c.data||[]; state.concepts=co.data||[]; state.goals=g.data||[];
-  render();
+ await ensureWorkspace();const id=state.workspace?.id;if(!id)return;
+ const [m,c,co,g]=await Promise.all([
+ db.from("movements").select("*").eq("workspace_id",id).order("created_at",{ascending:false}),
+ db.from("cards").select("*").eq("workspace_id",id).order("created_at",{ascending:false}),
+ db.from("concepts").select("*").eq("workspace_id",id).order("name"),
+ db.from("savings_goals").select("*").eq("workspace_id",id).order("created_at",{ascending:false})]);
+ state.movements=m.data||[];state.cards=c.data||[];state.concepts=co.data||[];state.goals=g.data||[];render();
 }
-function render(){
-  $("#currentMonthLabel").textContent=monthLabel(state.month);
-  renderHome(); renderMovements(); renderCards(); renderGoals(); renderConcepts(); renderSummary();
-}
-function currentMovements(){
-  const key=monthKey(state.month);
-  return state.movements.filter(x=>String(x.transaction_date).slice(0,7)===key.slice(0,7));
-}
+function currentRows(){const k=monthKey(state.month);return state.movements.filter(x=>String(x.transaction_date).slice(0,7)===k)}
+function render(){ $("#currentMonthLabel").textContent=monthLabel(state.month);renderHome();renderMovements();renderCards();renderGoals();renderConcepts();renderSummary()}
 function renderHome(){
-  const rows=currentMovements();
-  const income=rows.filter(x=>x.type==="income").reduce((s,x)=>s+Number(x.amount),0);
-  const expenses=rows.filter(x=>x.type==="expense" && x.payment_method!=="credit").reduce((s,x)=>s+Number(x.amount),0);
-  const available=income-expenses;
-  $("#incomeTotal").textContent=money(income); $("#expenseTotal").textContent=money(expenses); $("#availableTotal").textContent=money(available);
-  const pct=income?expenses/income:0;
-  const score=income?Math.max(0,Math.min(100,Math.round((1-pct)*100))):null;
-  $("#monthScore").textContent=score===null?"—":`${score}/100`;
-  $("#monthScoreText").textContent=score===null?"Aún no hay ingresos registrados":score>=75?"Buen mes":score>=50?"Mes regular":"Mes complicado";
-  const recent=state.movements.slice(0,5);
-  $("#recentList").innerHTML=recent.length?recent.map(movementHTML).join(""):'<div class="empty">Todavía no hay movimientos.</div>';
-  $("#alertsList").innerHTML=buildAlerts();
+ const r=currentRows(),income=r.filter(x=>x.type==="income").reduce((s,x)=>s+Number(x.amount),0),real=r.filter(isRealOutflow).reduce((s,x)=>s+Number(x.amount),0),registered=r.filter(x=>x.type==="expense").reduce((s,x)=>s+Number(x.amount),0),available=accumulatedBalance(todayISO()),score=income?Math.max(0,Math.min(100,Math.round((1-real/income)*100))):null;
+ $("#incomeTotal").textContent=money(income);$("#expenseTotal").textContent=money(registered);$("#availableTotal").textContent=money(available);$("#monthScore").textContent=score===null?"—":`${score}/100`;$("#monthScoreText").textContent=score===null?"Aún no hay ingresos registrados":score>=75?"Buen mes":score>=50?"Mes regular":"Mes complicado";
+ $("#recentList").innerHTML=state.movements.slice(0,5).map(movementHTML).join("")||'<div class="empty">Todavía no hay movimientos.</div>';$("#alertsList").innerHTML=buildAlerts();
 }
 function buildAlerts(){
-  const alerts=[];
-  state.cards.forEach(c=>{
-    if(Number(c.credit_limit)>0){
-      const used=Number(c.credit_used||0)/Number(c.credit_limit);
-      if(used>=.8) alerts.push(`⚠️ ${esc(c.name)}: crédito utilizado al ${(used*100).toFixed(0)}%.`);
-    }
-  });
-  const rows=currentMovements();
-  if(rows.some(x=>x.type==="expense" && x.payment_method==="credit")) alerts.push("💳 Hay compras con crédito que todavía no representan una salida de dinero.");
-  return alerts.length?alerts.map(x=>`<div class="movement-item">${x}</div>`).join(""):'<div class="empty">No hay alertas por ahora.</div>';
+ const a=[];state.cards.forEach(c=>{const l=Number(c.credit_limit),u=cardUsed(c.id);if(l&&u/l>=.8)a.push(`⚠️ ${esc(c.name)}: crédito utilizado al ${(u/l*100).toFixed(0)}%.`)});
+ const r=currentRows(),i=r.filter(x=>x.type==="income").reduce((s,x)=>s+Number(x.amount),0),o=r.filter(isRealOutflow).reduce((s,x)=>s+Number(x.amount),0);
+ if(i&&o>i)a.push("🔴 Este mes tus salidas reales superan tus ingresos.");
+ return a.length?a.map(x=>`<div class="movement-item">${x}</div>`).join(""):'<div class="empty">No hay alertas por ahora.</div>';
 }
-function movementHTML(x){
-  const editable=within24h(x.created_at);
-  const concept=x.concept_name||x.description||"Movimiento";
-  return `<div class="movement-item">
-    <div class="movement-left"><div class="movement-icon">${x.type==="income"?"↗":"↘"}</div><div><div class="movement-name">${esc(concept)}</div><div class="movement-meta">${esc(x.transaction_date)} · ${esc(x.payment_method||"")}${x.is_shared?" · Compartido":""}</div></div></div>
-    <div class="actions"><strong class="${x.type==="income"?"income-amount":"expense-amount"}">${x.type==="income"?"+":"-"}${money(x.amount)}</strong>
-    ${editable?`<button class="icon-btn" onclick="editMovement('${x.id}')">✎</button><button class="icon-btn" onclick="deleteMovement('${x.id}')">×</button>`:"<span title='Bloqueado después de 24 horas'>🔒</span>"}</div>
-  </div>`;
-}
-function renderMovements(){
-  let rows=currentMovements();
-  if(state.movementFilter!=="all") rows=rows.filter(x=>state.movementFilter==="income"?x.type==="income":x.type==="expense");
-  $("#movementsList").innerHTML=rows.length?rows.map(movementHTML).join(""):'<div class="empty">No hay movimientos para este mes.</div>';
-}
+function movementHTML(x){const ok=within24h(x.created_at);return `<div class="movement-item"><div class="movement-left"><div class="movement-icon">${x.type==="income"?"↗":"↘"}</div><div><div class="movement-name">${esc(x.concept_name||x.description||"Movimiento")}</div><div class="movement-meta">${esc(x.transaction_date)} · ${esc(x.payment_method||"")}${x.is_shared?" · Compartido":""}</div></div></div><div class="actions"><strong class="${x.type==="income"?"income-amount":"expense-amount"}">${x.type==="income"?"+":"-"}${money(x.amount)}</strong>${ok?`<button class="icon-btn" onclick="editMovement('${x.id}')">✎</button><button class="icon-btn" onclick="deleteMovement('${x.id}')">×</button>`:"🔒"}</div></div>`}
+function renderMovements(){let r=currentRows();if(state.movementFilter!=="all")r=r.filter(x=>state.movementFilter==="income"?x.type==="income":x.type==="expense");$("#movementsList").innerHTML=r.map(movementHTML).join("")||'<div class="empty">No hay movimientos para este mes.</div>'}
 function renderCards(){
-  $("#cardsGrid").innerHTML=state.cards.length?state.cards.map(c=>{
-    const limit=Number(c.credit_limit||0), used=Number(c.credit_used||0), pct=limit?Math.min(100,used/limit*100):0;
-    const level=pct>=90?"critical":pct>=75?"high":pct>=50?"medium":"low";
-    return `<article class="credit-card ${level}" onclick="showCard('${c.id}')"><span class="card-type">${esc(c.product_type)}</span><h3>${esc(c.name)}</h3><div class="balance">${money(used)}</div><div class="bar"><i style="width:${pct}%"></i></div><div class="card-foot"><span>Usado ${pct.toFixed(0)}%</span><span>${money(Math.max(0,limit-used))} disponible</span></div></article>`;
-  }).join(""):'<div class="empty panel">Todavía no tienes tarjetas o créditos registrados.</div>';
+ $("#cardsGrid").innerHTML=state.cards.map(c=>{const l=Number(c.credit_limit),u=cardUsed(c.id),p=l?Math.min(100,u/l*100):0;return `<article class="credit-card" onclick="showCard('${c.id}')"><span class="card-type">${esc(c.product_type)}</span><h3>${esc(c.name)}</h3><div class="balance">${money(u)}</div><div class="bar"><i style="width:${p}%"></i></div><div class="card-foot"><span>Usado ${p.toFixed(0)}%</span><span>${money(Math.max(0,l-u))} disponible</span></div></article>`}).join("")||'<div class="empty panel">Todavía no tienes tarjetas.</div>';
 }
-function renderGoals(){
-  $("#goalsGrid").innerHTML=state.goals.length?state.goals.map(g=>{const p=Number(g.target_amount)?Math.min(100,Number(g.current_amount||0)/Number(g.target_amount)*100):0;return `<article class="goal"><h3>${esc(g.name)}</h3><div class="muted">${esc(g.target_date||"Sin fecha objetivo")}</div><div class="amount">${money(g.current_amount)} / ${money(g.target_amount)}</div><div class="bar"><i style="width:${p}%"></i></div><small>${p.toFixed(0)}% completado</small></article>`}).join(""):'<div class="empty panel">Crea tu primera meta de ahorro.</div>';
-}
-function renderConcepts(){
-  const inc=state.concepts.filter(x=>x.type==="income"), exp=state.concepts.filter(x=>x.type==="expense");
-  $("#incomeConcepts").innerHTML=inc.length?inc.map(conceptHTML).join(""):'<div class="empty">Sin conceptos.</div>';
-  $("#expenseConcepts").innerHTML=exp.length?exp.map(conceptHTML).join(""):'<div class="empty">Sin conceptos.</div>';
-}
+function renderGoals(){$("#goalsGrid").innerHTML=state.goals.map(g=>{const p=Number(g.target_amount)?Math.min(100,Number(g.current_amount||0)/Number(g.target_amount)*100):0;return `<article class="goal"><h3>${esc(g.name)}</h3><div class="muted">${esc(g.target_date||"Sin fecha objetivo")}</div><div class="amount">${money(g.current_amount)} / ${money(g.target_amount)}</div><div class="bar"><i style="width:${p}%"></i></div><small>${p.toFixed(0)}% completado</small></article>`}).join("")||'<div class="empty panel">Crea tu primera meta.</div>'}
 function conceptHTML(x){return `<div class="concept"><span>${esc(x.name)}</span><button class="icon-btn" onclick="deleteConcept('${x.id}')">×</button></div>`}
+function renderConcepts(){const i=state.concepts.filter(x=>x.type==="income"),e=state.concepts.filter(x=>x.type==="expense");$("#incomeConcepts").innerHTML=i.map(conceptHTML).join("")||'<div class="empty">Sin conceptos.</div>';$("#expenseConcepts").innerHTML=e.map(conceptHTML).join("")||'<div class="empty">Sin conceptos.</div>'}
 function renderSummary(){
-  const rows=currentMovements();
-  const income=rows.filter(x=>x.type==="income").reduce((s,x)=>s+Number(x.amount),0);
-  const expense=rows.filter(x=>x.type==="expense").reduce((s,x)=>s+Number(x.amount),0);
-  const realExpense=rows.filter(x=>x.type==="expense" && x.payment_method!=="credit").reduce((s,x)=>s+Number(x.amount),0);
-  const score=income?Math.max(0,Math.min(100,Math.round((1-realExpense/income)*100))):0;
-  const verdict=score>=75?"🟢 Buen mes":score>=50?"🟡 Mes regular":"🔴 Mes complicado";
-  $("#summaryPanel").innerHTML=`<div class="summary-hero"><div class="summary-score"><div class="muted">Calificación</div><div class="big">${income?score:"—"}</div><h3>${income?verdict:"Sin datos suficientes"}</h3><p class="muted">${income?`Ingresaste ${money(income)} y tu salida real de dinero fue ${money(realExpense)}.`:"Registra ingresos y gastos para generar tu resumen."}</p></div><div class="summary-numbers"><div class="summary-line"><span>Ingresos</span><strong>${money(income)}</strong></div><div class="summary-line"><span>Gastos registrados</span><strong>${money(expense)}</strong></div><div class="summary-line"><span>Salidas reales</span><strong>${money(realExpense)}</strong></div><div class="summary-line"><span>Balance del mes</span><strong>${money(income-realExpense)}</strong></div></div></div>`;
+ const r=currentRows(),i=r.filter(x=>x.type==="income").reduce((s,x)=>s+Number(x.amount),0),registered=r.filter(x=>x.type==="expense").reduce((s,x)=>s+Number(x.amount),0),real=r.filter(isRealOutflow).reduce((s,x)=>s+Number(x.amount),0),score=i?Math.max(0,Math.min(100,Math.round((1-real/i)*100))):0;
+ $("#summaryPanel").innerHTML=`<div class="summary-hero"><div class="summary-score"><div class="muted">Calificación</div><div class="big">${i?score:"—"}</div><h3>${i?(score>=75?"🟢 Buen mes":score>=50?"🟡 Mes regular":"🔴 Mes complicado"):"Sin datos suficientes"}</h3><p class="muted">${i?`Ingresaste ${money(i)} y tu salida real fue ${money(real)}.`:"Registra ingresos y gastos para generar tu resumen."}</p></div><div class="summary-numbers"><div class="summary-line"><span>Ingresos del mes</span><strong>${money(i)}</strong></div><div class="summary-line"><span>Gastos registrados</span><strong>${money(registered)}</strong></div><div class="summary-line"><span>Salidas reales</span><strong>${money(real)}</strong></div><div class="summary-line"><span>Saldo acumulado</span><strong>${money(accumulatedBalance(todayISO()))}</strong></div></div></div>`;
 }
-
-function movementForm(existing=null){
-  const isEdit=!!existing;
-  const concepts=state.concepts.filter(x=>x.type===(existing?.type||"expense"));
-  showModal(`<form class="form" id="movementForm"><h3>${isEdit?"Modificar":"Nuevo"} movimiento</h3>
-    <label>Tipo<select id="mType"><option value="expense" ${existing?.type==="expense"?"selected":""}>Gasto</option><option value="income" ${existing?.type==="income"?"selected":""}>Ingreso</option></select></label>
-    <label>Concepto<select id="mConcept"><option value="">Seleccionar...</option>${concepts.map(c=>`<option value="${esc(c.name)}" ${existing?.concept_name===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}</select></label>
-    <label>Monto<input id="mAmount" type="number" min="0.01" step="0.01" required value="${existing?.amount||""}"></label>
-    <label>Fecha<input id="mDate" type="date" required value="${existing?.transaction_date||new Date().toISOString().slice(0,10)}"></label>
-    <label>Método de pago<select id="mPayment"><option value="debit">Débito</option><option value="cash">Efectivo</option><option value="credit">Tarjeta de crédito</option><option value="department_store">Departamental</option><option value="kueski">Kueski</option></select></label>
-    <label>Clasificación<select id="mShared"><option value="false">Personal</option><option value="true" ${existing?.is_shared?"selected":""}>Compartido</option></select></label>
-    <div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Guardar</button></div>
-  </form>`);
-  $("#mType").onchange=()=>movementForm(existing);
-  if(existing) $("#mPayment").value=existing.payment_method||"debit";
-  $("#movementForm").onsubmit=async e=>{e.preventDefault();const payload={type:$("#mType").value,concept_name:$("#mConcept").value||null,amount:Number($("#mAmount").value),transaction_date:$("#mDate").value,payment_method:$("#mPayment").value,is_shared:$("#mShared").value==="true"};let q=existing?db.from("movements").update(payload).eq("id",existing.id):db.from("movements").insert({...payload,user_id:state.user.id});const {error}=await q;if(error) return notify(error.message);closeModal();await loadAll();};
+function movementForm(ex=null){
+ const edit=!!ex,type=ex?.type||"expense",cs=state.concepts.filter(c=>c.type===type),cards=state.cards;
+ showModal(`<form class="form" id="movementForm"><h3>${edit?"Modificar":"Nuevo"} movimiento</h3>
+ <label>Tipo<select id="mType"><option value="expense" ${type==="expense"?"selected":""}>Gasto</option><option value="income" ${type==="income"?"selected":""}>Ingreso</option></select></label>
+ <label>Concepto<select id="mConcept"><option value="">Seleccionar...</option>${cs.map(c=>`<option value="${esc(c.name)}" ${ex?.concept_name===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}</select></label>
+ <label>Monto<input id="mAmount" type="number" min=".01" step=".01" required value="${ex?.amount||""}"></label>
+ <label>Fecha<input id="mDate" type="date" required value="${ex?.transaction_date||todayISO()}"></label>
+ <label>Método<select id="mPayment"><option value="debit">Débito</option><option value="cash">Efectivo</option><option value="credit">Tarjeta de crédito</option><option value="department_store">Departamental</option><option value="kueski">Kueski</option><option value="card_payment">Pago de tarjeta</option></select></label>
+ <div id="cardSelectWrap"></div>
+ <label>Clasificación<select id="mShared"><option value="false">Personal</option><option value="true" ${ex?.is_shared?"selected":""}>Compartido</option></select></label>
+ <label>Notas (opcional)<input id="mNotes" value="${esc(ex?.notes||"")}"></label>
+ <div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Guardar</button></div></form>`);
+ const refresh=()=>{const pm=$("#mPayment").value,w=$("#cardSelectWrap");if(["credit","department_store","kueski","card_payment"].includes(pm))w.innerHTML=`<label>Tarjeta / crédito<select id="mCard">${cards.map(c=>`<option value="${c.id}" ${ex?.card_id===c.id?"selected":""}>${esc(c.name)} · ${esc(c.product_type)}</option>`).join("")}</select></label>`;else w.innerHTML=""};
+ $("#mType").onchange=()=>movementForm(ex);$("#mPayment").onchange=refresh;
+ if(ex)$("#mPayment").value=ex.movement_role==="card_payment"?"card_payment":ex.payment_method||"debit";refresh();
+ $("#movementForm").onsubmit=async e=>{e.preventDefault();const pm=$("#mPayment").value,isPay=pm==="card_payment",role=isPay?"card_payment":pm==="credit"?"card_purchase":pm==="kueski"?"kueski_purchase":"normal";
+ const payload={type:$("#mType").value,concept_name:$("#mConcept").value||null,amount:Number($("#mAmount").value),transaction_date:$("#mDate").value,payment_method:isPay?"debit":pm,is_shared:$("#mShared").value==="true",notes:$("#mNotes").value||null,movement_role:role,card_id:$("#mCard")?.value||null};
+ const q=ex?db.from("movements").update(payload).eq("id",ex.id):db.from("movements").insert({...payload,user_id:state.user.id,workspace_id:state.workspace.id});const {error}=await q;if(error)return notify(error.message);closeModal();await loadAll()};
 }
-async function editMovement(id){const m=state.movements.find(x=>x.id===id);if(!m)return;if(!within24h(m.created_at))return notify("Este movimiento ya está bloqueado porque pasaron 24 horas.");movementForm(m)}
-async function deleteMovement(id){const m=state.movements.find(x=>x.id===id);if(!m)return;if(!within24h(m.created_at))return notify("Este movimiento ya está bloqueado porque pasaron 24 horas.");if(!confirm("¿Eliminar este movimiento?"))return;const {error}=await db.from("movements").delete().eq("id",id);if(error)return notify(error.message);await loadAll()}
-function cardForm(){
-  showModal(`<form class="form" id="cardForm"><h3>Nueva tarjeta o crédito</h3>
-    <label>Nombre<input id="cName" required placeholder="Ej. BBVA Oro"></label>
-    <label>Producto<select id="cType"><option>Tarjeta de crédito</option><option>Tarjeta departamental</option><option>Kueski</option></select></label>
-    <label>Límite de crédito<input id="cLimit" type="number" min="0" step="0.01" required></label>
-    <label>Fecha de corte (si aplica)<input id="cCut" type="number" min="1" max="31" placeholder="Ej. 15"></label>
-    <label>Fecha de pago (si aplica)<input id="cDue" type="number" min="1" max="31" placeholder="Ej. 5"></label>
-    <div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Guardar</button></div>
-  </form>`);
-  $("#cardForm").onsubmit=async e=>{e.preventDefault();const {error}=await db.from("cards").insert({user_id:state.user.id,name:$("#cName").value,product_type:$("#cType").value,credit_limit:Number($("#cLimit").value),cut_day:Number($("#cCut").value)||null,due_day:Number($("#cDue").value)||null});if(error)return notify(error.message);closeModal();await loadAll()}
-}
-function conceptForm(){
-  showModal(`<form class="form" id="conceptForm"><h3>Nuevo concepto</h3><label>Tipo<select id="coType"><option value="expense">Gasto</option><option value="income">Ingreso</option></select></label><label>Nombre<input id="coName" required placeholder="Ej. Costco"></label><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Guardar</button></div></form>`);
-  $("#conceptForm").onsubmit=async e=>{e.preventDefault();const {error}=await db.from("concepts").insert({user_id:state.user.id,type:$("#coType").value,name:$("#coName").value.trim()});if(error)return notify(error.message);closeModal();await loadAll()}
-}
-async function deleteConcept(id){if(!confirm("¿Eliminar este concepto?"))return;const {error}=await db.from("concepts").delete().eq("id",id);if(error)return notify(error.message);await loadAll()}
-function goalForm(){
-  showModal(`<form class="form" id="goalForm"><h3>Nueva meta de ahorro</h3><label>Nombre<input id="gName" required placeholder="Ej. Fondo de emergencia"></label><label>Meta<input id="gTarget" type="number" min="1" required></label><label>Fecha objetivo<input id="gDate" type="date"></label><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Guardar</button></div></form>`);
-  $("#goalForm").onsubmit=async e=>{e.preventDefault();const {error}=await db.from("savings_goals").insert({user_id:state.user.id,name:$("#gName").value,target_amount:Number($("#gTarget").value),target_date:$("#gDate").value||null});if(error)return notify(error.message);closeModal();await loadAll()}
-}
-function showCard(id){const c=state.cards.find(x=>x.id===id);if(!c)return;const pct=Number(c.credit_limit)?Number(c.credit_used||0)/Number(c.credit_limit)*100:0;showModal(`<div class="form"><h3>${esc(c.name)}</h3><p class="muted">${esc(c.product_type)}</p><div class="summary-numbers"><div class="summary-line"><span>Límite</span><strong>${money(c.credit_limit)}</strong></div><div class="summary-line"><span>Crédito utilizado</span><strong>${money(c.credit_used)}</strong></div><div class="summary-line"><span>Disponible</span><strong>${money(Math.max(0,Number(c.credit_limit)-Number(c.credit_used||0)))}</strong></div><div class="summary-line"><span>Uso</span><strong>${pct.toFixed(1)}%</strong></div>${c.cut_day?`<div class="summary-line"><span>Corte</span><strong>Día ${c.cut_day}</strong></div>`:""}${c.due_day?`<div class="summary-line"><span>Pago</span><strong>Día ${c.due_day}</strong></div>`:""}</div></div>`)}
+async function editMovement(id){const m=state.movements.find(x=>x.id===id);if(!m)return;if(!within24h(m.created_at))return notify("Este movimiento ya está bloqueado.");movementForm(m)}
+async function deleteMovement(id){const m=state.movements.find(x=>x.id===id);if(!m||!within24h(m.created_at))return notify("Este movimiento ya está bloqueado.");if(!confirm("¿Eliminar este movimiento?"))return;const {error}=await db.from("movements").delete().eq("id",id);if(error)return notify(error.message);loadAll()}
+function cardForm(){showModal(`<form class="form" id="cardForm"><h3>Nueva tarjeta o crédito</h3><label>Nombre<input id="cName" required placeholder="Ej. BBVA Oro"></label><label>Producto<select id="cType"><option>Tarjeta de crédito</option><option>Tarjeta departamental</option><option>Kueski</option></select></label><label>Límite de crédito<input id="cLimit" type="number" min="0" required></label><label>Fecha de corte (si aplica)<input id="cCut" type="number" min="1" max="31"></label><label>Fecha de pago (si aplica)<input id="cDue" type="number" min="1" max="31"></label><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Guardar</button></div></form>`);$("#cardForm").onsubmit=async e=>{e.preventDefault();const {error}=await db.from("cards").insert({user_id:state.user.id,workspace_id:state.workspace.id,name:$("#cName").value,product_type:$("#cType").value,credit_limit:Number($("#cLimit").value),cut_day:Number($("#cCut").value)||null,due_day:Number($("#cDue").value)||null});if(error)return notify(error.message);closeModal();loadAll()}}
+function conceptForm(){showModal(`<form class="form" id="conceptForm"><h3>Nuevo concepto</h3><label>Tipo<select id="coType"><option value="expense">Gasto</option><option value="income">Ingreso</option></select></label><label>Nombre<input id="coName" required placeholder="Ej. Costco"></label><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Guardar</button></div></form>`);$("#conceptForm").onsubmit=async e=>{e.preventDefault();const {error}=await db.from("concepts").insert({user_id:state.user.id,workspace_id:state.workspace.id,type:$("#coType").value,name:$("#coName").value.trim()});if(error)return notify(error.message);closeModal();loadAll()}}
+async function deleteConcept(id){if(!confirm("¿Eliminar este concepto?"))return;const {error}=await db.from("concepts").delete().eq("id",id);if(error)return notify(error.message);loadAll()}
+function goalForm(){showModal(`<form class="form" id="goalForm"><h3>Nueva meta de ahorro</h3><label>Nombre<input id="gName" required></label><label>Meta<input id="gTarget" type="number" min="1" required></label><label>Fecha objetivo<input id="gDate" type="date"></label><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Guardar</button></div></form>`);$("#goalForm").onsubmit=async e=>{e.preventDefault();const {error}=await db.from("savings_goals").insert({user_id:state.user.id,workspace_id:state.workspace.id,name:$("#gName").value,target_amount:Number($("#gTarget").value),target_date:$("#gDate").value||null});if(error)return notify(error.message);closeModal();loadAll()}}
+function showCard(id){const c=state.cards.find(x=>x.id===id);if(!c)return;const used=cardUsed(id),available=Math.max(0,Number(c.credit_limit)-used),p=Number(c.credit_limit)?used/Number(c.credit_limit)*100:0,rows=state.movements.filter(x=>x.card_id===id),purchases=rows.filter(x=>["card_purchase","kueski_purchase"].includes(x.movement_role)).reduce((s,x)=>s+Number(x.amount),0),payments=rows.filter(x=>["card_payment","kueski_payment"].includes(x.movement_role)).reduce((s,x)=>s+Number(x.amount),0);showModal(`<div class="form"><h3>${esc(c.name)}</h3><p class="muted">${esc(c.product_type)}</p><div class="summary-numbers"><div class="summary-line"><span>Límite</span><strong>${money(c.credit_limit)}</strong></div><div class="summary-line"><span>Deuda actual</span><strong>${money(used)}</strong></div><div class="summary-line"><span>Disponible</span><strong>${money(available)}</strong></div><div class="summary-line"><span>Uso</span><strong>${p.toFixed(1)}%</strong></div><div class="summary-line"><span>Compras</span><strong>${money(purchases)}</strong></div><div class="summary-line"><span>Pagos</span><strong>${money(payments)}</strong></div></div></div>`) }
+function workspaceForm(){const mode=state.workspace?.type||"individual";showModal(`<div class="form"><h3>Espacio financiero</h3><p class="muted">Tus datos se comparten únicamente con integrantes de este espacio.</p><div class="choice-grid"><button type="button" class="choice ${mode==="individual"?"selected":""}" data-mode="individual"><strong>👤 Individual</strong><span>Solo tú.</span></button><button type="button" class="choice ${mode==="duo"?"selected":""}" data-mode="duo"><strong>👥 Duo</strong><span>Dos integrantes.</span></button><button type="button" class="choice ${mode==="family"?"selected":""}" data-mode="family"><strong>👨‍👩‍👧‍👦 Familiar</strong><span>Varios integrantes.</span></button></div><label>Nombre del espacio<input id="wName" value="${esc(state.workspace?.name||"")}"></label><div class="invite-box"><strong>Integrantes</strong><div class="member-list">${state.members.map(m=>`<div class="member"><span>${esc(m.profiles?.display_name||m.profiles?.email||"Integrante")}</span><small>${esc(m.role)}</small></div>`).join("")}</div></div><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button id="saveWorkspace" class="primary-btn">Guardar</button></div></div>`);let selected=mode;document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>{selected=b.dataset.mode;document.querySelectorAll(".choice").forEach(x=>x.classList.toggle("selected",x.dataset.mode===selected))});$("#saveWorkspace").onclick=async()=>{const {error}=await db.from("workspaces").update({type:selected,name:$("#wName").value.trim()||null}).eq("id",state.workspace.id);if(error)return notify(error.message);closeModal();loadAll()}}
+function inviteForm(){if(state.workspace?.type==="individual")return notify("Primero cambia tu espacio a Duo o Familiar.");showModal(`<form class="form" id="inviteForm"><h3>Invitar integrante</h3><p class="muted">La persona conservará su propia cuenta de Google.</p><label>Correo electrónico<input id="inviteEmail" type="email" required placeholder="persona@gmail.com"></label><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Crear invitación</button></div></form>`);$("#inviteForm").onsubmit=async e=>{e.preventDefault();const {error}=await db.from("workspace_invitations").insert({workspace_id:state.workspace.id,invited_email:$("#inviteEmail").value.trim().toLowerCase(),invited_by:state.user.id});if(error)return notify(error.message);closeModal();notify("Invitación creada. La aceptación automática y el envío por correo serán el siguiente paso.")}}
 $("#googleLogin").onclick=async()=>{const {error}=await db.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname}});if(error)$("#loginMessage").textContent=error.message};
-$("#logoutBtn").onclick=()=>db.auth.signOut();
-$("#modalClose").onclick=closeModal; $(".modal-backdrop").onclick=closeModal;
-$("#addMovementBtn").onclick=()=>movementForm(); $("#addCardBtn").onclick=cardForm; $("#addConceptBtn").onclick=conceptForm; $("#addGoalBtn").onclick=goalForm;
-$("#prevMonth").onclick=()=>{state.month.setMonth(state.month.getMonth()-1);render()};
-$("#nextMonth").onclick=()=>{state.month.setMonth(state.month.getMonth()+1);render()};
-document.querySelectorAll(".nav-item").forEach(btn=>btn.onclick=()=>go(btn.dataset.section));
-document.querySelectorAll(".filter").forEach(btn=>btn.onclick=()=>{document.querySelectorAll(".filter").forEach(x=>x.classList.remove("active"));btn.classList.add("active");state.movementFilter=btn.dataset.filter;renderMovements()});
-document.querySelectorAll(".text-btn").forEach(btn=>btn.onclick=()=>go(btn.dataset.go));
-function go(section){document.querySelectorAll(".page-section").forEach(x=>x.classList.add("hidden"));$(`#section-${section}`).classList.remove("hidden");document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.section===section));$("#pageTitle").textContent={inicio:"Inicio",movimientos:"Movimientos",tarjetas:"Tarjetas",ahorro:"Ahorro",conceptos:"Conceptos",resumen:"Resumen mensual"}[section]}
+$("#logoutBtn").onclick=()=>db.auth.signOut();$("#modalClose").onclick=closeModal;$(".modal-backdrop").onclick=closeModal;
+$("#workspaceBtn").onclick=workspaceForm;$("#workspaceSideBtn").onclick=workspaceForm;$("#inviteBtn").onclick=inviteForm;$("#addMovementBtn").onclick=()=>movementForm();$("#addCardBtn").onclick=cardForm;$("#addConceptBtn").onclick=conceptForm;$("#addGoalBtn").onclick=goalForm;
+$("#prevMonth").onclick=()=>{state.month.setMonth(state.month.getMonth()-1);render()};$("#nextMonth").onclick=()=>{state.month.setMonth(state.month.getMonth()+1);render()};
+document.querySelectorAll(".nav-item").forEach(b=>b.onclick=()=>go(b.dataset.section));document.querySelectorAll(".filter").forEach(b=>b.onclick=()=>{document.querySelectorAll(".filter").forEach(x=>x.classList.remove("active"));b.classList.add("active");state.movementFilter=b.dataset.filter;renderMovements()});document.querySelectorAll(".text-btn").forEach(b=>b.onclick=()=>go(b.dataset.go));
+function go(s){document.querySelectorAll(".page-section").forEach(x=>x.classList.add("hidden"));$("#section-"+s).classList.remove("hidden");document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.section===s));$("#pageTitle").textContent={inicio:"Inicio",movimientos:"Movimientos",tarjetas:"Tarjetas",ahorro:"Ahorro",conceptos:"Conceptos",resumen:"Resumen mensual"}[s]}
 init();

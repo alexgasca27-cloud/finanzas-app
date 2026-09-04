@@ -1,143 +1,59 @@
 <!doctype html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Finanzas App</title>
-  <meta name="description" content="Control financiero personal, de pareja y familiar.">
-  <link rel="stylesheet" href="style.css">
-</head>
+<html lang="es"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Finanzas App</title><link rel="stylesheet" href="style.css"></head>
 <body>
-  <div id="app">
-    <section id="loginView" class="login-screen">
-      <div class="login-card">
-        <div class="brand-mark">F</div>
-        <h1>Finanzas App</h1>
-        <p>Tu dinero, tus metas y tus finanzas compartidas en un solo lugar.</p>
-        <button id="googleLogin" class="auth-btn google">Continuar con Google</button>
-        <small id="loginMessage"></small>
-      </div>
-    </section>
+<div id="app">
+<section id="loginView" class="login-screen"><div class="login-card">
+<div class="brand-mark">F</div><h1>Finanzas App</h1>
+<p>Tu dinero, tus metas y tus finanzas compartidas en un solo lugar.</p>
+<button id="googleLogin" class="auth-btn google">Continuar con Google</button>
+<small id="loginMessage"></small></div></section>
 
-    <section id="dashboardView" class="dashboard hidden">
-      <aside class="sidebar">
-        <div class="sidebar-brand"><span class="brand-mark small">F</span><strong>Finanzas</strong></div>
-        <nav id="mainNav">
-          <button class="nav-item active" data-section="inicio">⌂ <span>Inicio</span></button>
-          <button class="nav-item" data-section="movimientos">↕ <span>Movimientos</span></button>
-          <button class="nav-item" data-section="tarjetas">▣ <span>Tarjetas</span></button>
-          <button class="nav-item" data-section="ahorro">◎ <span>Ahorro</span></button>
-          <button class="nav-item" data-section="conceptos">≡ <span>Conceptos</span></button>
-          <button class="nav-item" data-section="resumen">▥ <span>Resumen mensual</span></button>
-        </nav>
-        <button id="logoutBtn" class="logout">Cerrar sesión</button>
-      </aside>
+<section id="dashboardView" class="dashboard hidden">
+<aside class="sidebar">
+<div class="sidebar-brand"><span class="brand-mark small">F</span><strong>Finanzas</strong></div>
+<nav>
+<button class="nav-item active" data-section="inicio">⌂ <span>Inicio</span></button>
+<button class="nav-item" data-section="movimientos">↕ <span>Movimientos</span></button>
+<button class="nav-item" data-section="tarjetas">▣ <span>Tarjetas</span></button>
+<button class="nav-item" data-section="ahorro">◎ <span>Ahorro</span></button>
+<button class="nav-item" data-section="conceptos">≡ <span>Conceptos</span></button>
+<button class="nav-item" data-section="resumen">▥ <span>Resumen mensual</span></button>
+</nav>
+<button id="inviteBtn" class="logout hidden">+ Invitar integrante</button>
+<button id="workspaceSideBtn" class="logout">⚙ Espacio</button>
+<button id="logoutBtn" class="logout">Cerrar sesión</button>
+</aside>
 
-      <main class="main">
-        <header class="topbar">
-          <div>
-            <span class="eyebrow">FINANZAS APP</span>
-            <h2 id="pageTitle">Inicio</h2>
-          </div>
-          <div class="user-area">
-            <span id="userEmail"></span>
-            <div id="userAvatar" class="avatar">U</div>
-          </div>
-        </header>
+<main class="main"><header class="topbar"><div><span class="eyebrow">FINANZAS APP</span><h2 id="pageTitle">Inicio</h2></div>
+<div class="user-area"><button id="workspaceBtn" class="workspace-btn">👤 Individual</button><span id="userEmail"></span><div id="userAvatar" class="avatar">U</div></div></header>
 
-        <div id="content">
-          <section id="section-inicio" class="page-section">
-            <div class="hero-row">
-              <div>
-                <h3 id="welcomeTitle">Hola 👋</h3>
-                <p class="muted">Aquí tienes una vista rápida de tus finanzas.</p>
-              </div>
-              <div class="month-picker">
-                <button id="prevMonth">‹</button>
-                <strong id="currentMonthLabel"></strong>
-                <button id="nextMonth">›</button>
-              </div>
-            </div>
+<div id="content">
+<section id="section-inicio" class="page-section"><div class="hero-row"><div><h3 id="welcomeTitle">Hola 👋</h3><p class="muted">Aquí tienes una vista rápida de tus finanzas.</p></div>
+<div class="month-picker"><button id="prevMonth">‹</button><strong id="currentMonthLabel"></strong><button id="nextMonth">›</button></div></div>
+<div class="stats-grid">
+<article class="stat-card"><span>Ingresos del mes</span><strong id="incomeTotal">$0.00</strong><small>Entradas registradas</small></article>
+<article class="stat-card"><span>Gastos del mes</span><strong id="expenseTotal">$0.00</strong><small>Salidas reales</small></article>
+<article class="stat-card"><span>Disponible</span><strong id="availableTotal">$0.00</strong><small>Balance del mes</small></article>
+<article class="stat-card score-card"><span>Mes</span><strong id="monthScore">—</strong><small id="monthScoreText">Aún no hay suficientes datos</small></article></div>
+<div class="two-col"><article class="panel"><div class="panel-head"><div><h3>Alertas importantes</h3><p>Pagos y situaciones que requieren atención.</p></div></div><div id="alertsList" class="empty">No hay alertas por ahora.</div></article>
+<article class="panel"><div class="panel-head"><div><h3>Actividad reciente</h3><p>Últimos movimientos.</p></div><button class="text-btn" data-go="movimientos">Ver todos</button></div><div id="recentList" class="movement-list"></div></article></div>
+</section>
 
-            <div class="stats-grid">
-              <article class="stat-card"><span>Ingresos del mes</span><strong id="incomeTotal">$0.00</strong><small>Entradas registradas</small></article>
-              <article class="stat-card"><span>Gastos del mes</span><strong id="expenseTotal">$0.00</strong><small>Salidas reales</small></article>
-              <article class="stat-card"><span>Disponible</span><strong id="availableTotal">$0.00</strong><small>Incluye saldo acumulado</small></article>
-              <article class="stat-card score-card"><span>Mes</span><strong id="monthScore">—</strong><small id="monthScoreText">Aún no hay suficientes datos</small></article>
-            </div>
+<section id="section-movimientos" class="page-section hidden"><div class="section-head"><div><h3>Movimientos</h3><p>Modificar o eliminar solo durante las primeras 24 horas.</p></div><button id="addMovementBtn" class="primary-btn">+ Nuevo movimiento</button></div>
+<div class="filter-row"><button class="filter active" data-filter="all">Todos</button><button class="filter" data-filter="income">Ingresos</button><button class="filter" data-filter="expense">Gastos</button></div>
+<div id="movementsList" class="movement-list panel"></div></section>
 
-            <div class="two-col">
-              <article class="panel">
-                <div class="panel-head"><div><h3>Alertas importantes</h3><p>Pagos y situaciones que requieren atención.</p></div></div>
-                <div id="alertsList" class="empty">No hay alertas por ahora.</div>
-              </article>
-              <article class="panel">
-                <div class="panel-head"><div><h3>Actividad reciente</h3><p>Últimos movimientos registrados.</p></div><button class="text-btn" data-go="movimientos">Ver todos</button></div>
-                <div id="recentList" class="movement-list"></div>
-              </article>
-            </div>
-          </section>
+<section id="section-tarjetas" class="page-section hidden"><div class="section-head"><div><h3>Tarjetas y créditos</h3><p>Crédito, departamentales y Kueski.</p></div><button id="addCardBtn" class="primary-btn">+ Nueva tarjeta</button></div><div id="cardsGrid" class="cards-grid"></div></section>
 
-          <section id="section-movimientos" class="page-section hidden">
-            <div class="section-head">
-              <div><h3>Movimientos</h3><p>Registra ingresos y gastos. Podrás modificar o eliminar durante 24 horas.</p></div>
-              <button id="addMovementBtn" class="primary-btn">+ Nuevo movimiento</button>
-            </div>
-            <div class="filter-row">
-              <button class="filter active" data-filter="all">Todos</button>
-              <button class="filter" data-filter="income">Ingresos</button>
-              <button class="filter" data-filter="expense">Gastos</button>
-            </div>
-            <div id="movementsList" class="movement-list panel"></div>
-          </section>
+<section id="section-ahorro" class="page-section hidden"><div class="section-head"><div><h3>Ahorro</h3><p>Define metas y sigue tu progreso.</p></div><button id="addGoalBtn" class="primary-btn">+ Nueva meta</button></div><div id="goalsGrid" class="goals-grid"></div></section>
 
-          <section id="section-tarjetas" class="page-section hidden">
-            <div class="section-head">
-              <div><h3>Tarjetas y créditos</h3><p>Crédito, departamentales y Kueski.</p></div>
-              <button id="addCardBtn" class="primary-btn">+ Nueva tarjeta</button>
-            </div>
-            <div id="cardsGrid" class="cards-grid"></div>
-          </section>
+<section id="section-conceptos" class="page-section hidden"><div class="section-head"><div><h3>Conceptos</h3><p>Personaliza tus conceptos de ingresos y gastos.</p></div><button id="addConceptBtn" class="primary-btn">+ Nuevo concepto</button></div>
+<div class="two-col"><article class="panel"><h3>Ingresos</h3><div id="incomeConcepts" class="concept-list"></div></article><article class="panel"><h3>Gastos</h3><div id="expenseConcepts" class="concept-list"></div></article></div></section>
 
-          <section id="section-ahorro" class="page-section hidden">
-            <div class="section-head">
-              <div><h3>Ahorro</h3><p>Define metas y sigue tu progreso.</p></div>
-              <button id="addGoalBtn" class="primary-btn">+ Nueva meta</button>
-            </div>
-            <div id="goalsGrid" class="goals-grid"></div>
-          </section>
-
-          <section id="section-conceptos" class="page-section hidden">
-            <div class="section-head">
-              <div><h3>Conceptos</h3><p>Personaliza las categorías que utilizas al registrar movimientos.</p></div>
-              <button id="addConceptBtn" class="primary-btn">+ Nuevo concepto</button>
-            </div>
-            <div class="two-col">
-              <article class="panel"><h3>Ingresos</h3><div id="incomeConcepts" class="concept-list"></div></article>
-              <article class="panel"><h3>Gastos</h3><div id="expenseConcepts" class="concept-list"></div></article>
-            </div>
-          </section>
-
-          <section id="section-resumen" class="page-section hidden">
-            <div class="section-head">
-              <div><h3>Resumen del mes</h3><p>Una lectura sencilla de cómo se comportó tu dinero.</p></div>
-            </div>
-            <div id="summaryPanel" class="summary-panel"></div>
-          </section>
-        </div>
-      </main>
-    </section>
-  </div>
-
-  <div id="modal" class="modal hidden">
-    <div class="modal-backdrop"></div>
-    <div class="modal-card">
-      <button class="modal-close" id="modalClose">×</button>
-      <div id="modalContent"></div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js"></script>
-</body>
-</html>
+<section id="section-resumen" class="page-section hidden"><div class="section-head"><div><h3>Resumen del mes</h3><p>Una lectura sencilla de tu comportamiento financiero.</p></div></div><div id="summaryPanel" class="summary-panel"></div></section>
+</div></main></section></div>
+<div id="modal" class="modal hidden"><div class="modal-backdrop"></div><div class="modal-card"><button class="modal-close" id="modalClose">×</button><div id="modalContent"></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="app.js"></script>
+</body></html>
