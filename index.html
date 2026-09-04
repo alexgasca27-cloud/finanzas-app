@@ -1,219 +1,124 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0f172a">
   <title>Finanzas App</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
-  <main id="app">
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <div class="logo-box">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="4" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M7 9H15M7 13H17M7 17H11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h1>Finanzas App</h1>
+      <p class="subtitle">Tu dinero, tus objetivos y tus decisiones en un solo lugar.</p>
 
-    <!-- LOGIN -->
-    <section id="login-screen" class="screen login-screen">
-      <div class="login-card">
-        <div class="brand-mark" aria-label="Finanzas App">
-          <svg viewBox="0 0 48 48" aria-hidden="true">
-            <rect x="5" y="8" width="38" height="32" rx="9"></rect>
-            <path d="M15 25h18M15 19h11M15 31h8"></path>
+      <button id="google-login" class="auth-button google-button" type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path fill="#4285F4" d="M21.35 12.23c0-.7-.06-1.37-.18-2H12v3.79h5.23a4.47 4.47 0 0 1-1.94 2.93v2.43h3.14c1.84-1.69 2.92-4.18 2.92-7.15Z"/>
+          <path fill="#34A853" d="M12 21.72c2.63 0 4.84-.87 6.45-2.34l-3.14-2.43c-.87.58-1.98.93-3.31.93-2.54 0-4.69-1.72-5.46-4.03H3.3v2.51A9.74 9.74 0 0 0 12 21.72Z"/>
+          <path fill="#FBBC05" d="M6.54 13.85A5.86 5.86 0 0 1 6.23 12c0-.64.11-1.26.31-1.85V7.64H3.3A9.74 9.74 0 0 0 2.26 12c0 1.57.38 3.05 1.04 4.36l3.24-2.51Z"/>
+          <path fill="#EA4335" d="M12 6.12c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.83 3.21 14.63 2.28 12 2.28a9.74 9.74 0 0 0-8.7 5.36l3.24 2.51c.77-2.31 2.92-4.03 5.46-4.03Z"/>
+        </svg>
+        <span>Continuar con Google</span>
+      </button>
+
+      <button id="apple-login" class="auth-button apple-button" type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path fill="currentColor" d="M16.77 12.76c.02 2.1 1.84 2.8 1.86 2.81-.02.05-.29.99-1.01 1.95-.61.82-1.24 1.63-2.23 1.65-.98.02-1.3-.53-2.42-.53-1.13 0-1.48.51-2.41.55-.97.04-1.7-.89-2.32-1.71-1.26-1.63-2.22-4.6-.93-6.61.64-1 1.64-1.64 2.73-1.66.95-.02 1.85.58 2.42.58.58 0 1.66-.72 2.8-.62.48.02 1.84.19 2.71 1.42-.07.04-1.62.95-1.6 2.83ZM14.93 7.6c.51-.62.85-1.48.76-2.34-.74.03-1.64.49-2.17 1.1-.47.54-.88 1.42-.77 2.25.83.06 1.67-.42 2.18-1.01Z"/>
+        </svg>
+        <span>Continuar con Apple</span>
+      </button>
+
+      <p id="login-status" class="status"></p>
+    </div>
+  </div>
+
+  <div id="dashboard-screen" class="dashboard hidden">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-box">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="4" width="18" height="16" rx="4" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M7 9H15M7 13H17M7 17H11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
           </svg>
         </div>
-
-        <h1>Finanzas App</h1>
-        <p class="subtitle">Organiza y controla tus finanzas de forma sencilla.</p>
-
-        <button id="google-login" class="login-button google-button" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path fill="#4285F4" d="M21.35 12.23c0-.7-.06-1.37-.18-2H12v3.79h5.23a4.47 4.47 0 0 1-1.94 2.93v2.43h3.14c1.84-1.69 2.92-4.18 2.92-7.15Z"/>
-            <path fill="#34A853" d="M12 21.72c2.63 0 4.84-.87 6.45-2.34l-3.14-2.43c-.87.58-1.98.93-3.31.93-2.54 0-4.69-1.72-5.46-4.03H3.3v2.51A9.74 9.74 0 0 0 12 21.72Z"/>
-            <path fill="#FBBC05" d="M6.54 13.85A5.86 5.86 0 0 1 6.23 12c0-.64.11-1.26.31-1.85V7.64H3.3A9.74 9.74 0 0 0 2.26 12c0 1.57.38 3.05 1.04 4.36l3.24-2.51Z"/>
-            <path fill="#EA4335" d="M12 6.12c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.83 3.21 14.63 2.28 12 2.28a9.74 9.74 0 0 0-8.7 5.36l3.24 2.51c.77-2.31 2.92-4.03 5.46-4.03Z"/>
-          </svg>
-          <span>Continuar con Google</span>
-        </button>
-
-        <button id="apple-login" class="login-button apple-button" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path fill="currentColor" d="M16.77 12.76c.02 2.1 1.84 2.8 1.86 2.81-.02.05-.29.99-1.01 1.95-.61.82-1.24 1.63-2.23 1.65-.98.02-1.3-.53-2.42-.53-1.13 0-1.48.51-2.41.55-.97.04-1.7-.89-2.32-1.71-1.26-1.63-2.22-4.6-.93-6.61.64-1 1.64-1.64 2.73-1.66.95-.02 1.85.58 2.42.58.58 0 1.66-.72 2.8-.62.48.02 1.84.19 2.71 1.42-.07.04-1.62.95-1.6 2.83ZM14.93 7.6c.51-.62.85-1.48.76-2.34-.74.03-1.64.49-2.17 1.1-.47.54-.88 1.42-.77 2.25.83.06 1.67-.42 2.18-1.01Z"/>
-          </svg>
-          <span>Continuar con Apple</span>
-        </button>
-
-        <p id="login-status" class="status" aria-live="polite"></p>
+        <strong>Finanzas App</strong>
       </div>
-    </section>
+      <div class="topbar-right">
+        <span id="user-email"></span>
+        <button id="logout-button" class="logout-button">Cerrar sesión</button>
+      </div>
+    </header>
 
-    <!-- DASHBOARD -->
-    <section id="dashboard-screen" class="dashboard-screen hidden">
-      <header class="topbar">
-        <a class="app-brand" href="#" aria-label="Finanzas App">
-          <span class="brand-icon">
-            <svg viewBox="0 0 48 48" aria-hidden="true">
-              <rect x="5" y="8" width="38" height="32" rx="9"></rect>
-              <path d="M15 25h18M15 19h11M15 31h8"></path>
-            </svg>
-          </span>
-          <span>Finanzas App</span>
-        </a>
-
-        <div class="topbar-actions">
-          <span id="user-email" class="user-email"></span>
-          <button id="logout-button" class="logout-button" type="button">Cerrar sesión</button>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <nav>
+          <a class="nav active" href="#inicio"><span class="nav-icon">⌂</span>Inicio</a>
+          <a class="nav" href="#movimientos"><span class="nav-icon">≡</span>Movimientos</a>
+          <a class="nav" href="#ingresos"><span class="nav-icon">↗</span>Ingresos</a>
+          <a class="nav" href="#gastos"><span class="nav-icon">↘</span>Gastos</a>
+          <a class="nav" href="#tarjetas"><span class="nav-icon">▣</span>Tarjetas</a>
+          <a class="nav" href="#presupuestos"><span class="nav-icon">⌁</span>Presupuestos</a>
+          <a class="nav" href="#compartido"><span class="nav-icon">♧</span>Duo / Familiar</a>
+        </nav>
+        <div class="ai-box">
+          <div class="ai-symbol">✦</div>
+          <strong>Asistente IA</strong>
+          <p>Analiza tus finanzas y encuentra oportunidades.</p>
         </div>
-      </header>
+      </aside>
 
-      <div class="dashboard-layout">
-        <aside class="sidebar">
-          <nav>
-            <a class="nav-item active" href="#inicio">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z"/></svg>
-              <span>Inicio</span>
-            </a>
-            <a class="nav-item" href="#movimientos">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
-              <span>Movimientos</span>
-            </a>
-            <a class="nav-item" href="#ingresos">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V4m-6 6 6-6 6 6"/><path d="M5 20h14"/></svg>
-              <span>Ingresos</span>
-            </a>
-            <a class="nav-item" href="#gastos">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16m6-6-6 6-6-6"/><path d="M5 4h14"/></svg>
-              <span>Gastos</span>
-            </a>
-            <a class="nav-item" href="#tarjetas">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>
-              <span>Tarjetas</span>
-            </a>
-            <a class="nav-item" href="#presupuestos">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16"/><path d="m7 15 3-4 3 2 4-6"/></svg>
-              <span>Presupuestos</span>
-            </a>
-            <a class="nav-item" href="#compartido">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M14 18a4 4 0 0 1 6.5 0"/></svg>
-              <span>Duo / Familiar</span>
-            </a>
-          </nav>
-
-          <div class="sidebar-ai">
-            <div class="ai-icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg>
-            </div>
-            <strong>Asistente IA</strong>
-            <p>Analizaremos tus finanzas y te daremos recomendaciones.</p>
+      <main class="content">
+        <div class="heading">
+          <div>
+            <div class="overline">RESUMEN FINANCIERO</div>
+            <h2>Bienvenido<span id="user-name"></span></h2>
+            <p>Este será tu centro de control financiero.</p>
           </div>
-        </aside>
+          <button class="primary-button">＋ Agregar movimiento</button>
+        </div>
 
-        <main class="main-content" id="inicio">
-          <div class="page-heading">
-            <div>
-              <p class="eyebrow">RESUMEN FINANCIERO</p>
-              <h1>Bienvenido<span id="user-name"></span></h1>
-              <p>Este será tu centro de control financiero.</p>
-            </div>
-            <button class="primary-button" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-              <span>Agregar movimiento</span>
-            </button>
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-icon income">↗</div>
+            <div><span>Ingresos del mes</span><strong>$0.00</strong></div>
           </div>
+          <div class="stat-card">
+            <div class="stat-icon expense">↘</div>
+            <div><span>Gastos del mes</span><strong>$0.00</strong></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon balance">▣</div>
+            <div><span>Balance disponible</span><strong>$0.00</strong></div>
+          </div>
+        </div>
 
-          <section class="summary-grid">
-            <article class="summary-card">
-              <div class="summary-icon income">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V4m-6 6 6-6 6 6"/></svg>
-              </div>
-              <div>
-                <span>Ingresos del mes</span>
-                <strong>$0.00</strong>
-              </div>
-            </article>
-
-            <article class="summary-card">
-              <div class="summary-icon expense">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16m6-6-6 6-6-6"/></svg>
-              </div>
-              <div>
-                <span>Gastos del mes</span>
-                <strong>$0.00</strong>
-              </div>
-            </article>
-
-            <article class="summary-card">
-              <div class="summary-icon balance">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17V7h16v10"/><path d="M4 10h16"/><path d="M8 14h2"/></svg>
-              </div>
-              <div>
-                <span>Balance disponible</span>
-                <strong>$0.00</strong>
-              </div>
-            </article>
-          </section>
-
-          <section class="content-card">
-            <div class="section-heading">
-              <div>
-                <h2>Comienza a organizar tus finanzas</h2>
-                <p>Estas serán las herramientas principales de tu cuenta.</p>
-              </div>
-            </div>
-
-            <div class="module-grid">
-              <article class="module-card">
-                <div class="module-icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V4m-6 6 6-6 6 6"/><path d="M5 20h14"/></svg>
-                </div>
-                <h3>Ingresos</h3>
-                <p>Registra sueldo, negocios y cualquier otra fuente de ingreso.</p>
-              </article>
-
-              <article class="module-card">
-                <div class="module-icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16m6-6-6 6-6-6"/><path d="M5 4h14"/></svg>
-                </div>
-                <h3>Gastos</h3>
-                <p>Clasifica tus gastos como personales o compartidos.</p>
-              </article>
-
-              <article class="module-card">
-                <div class="module-icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>
-                </div>
-                <h3>Tarjetas</h3>
-                <p>Controla saldos, fechas de corte y fechas de pago.</p>
-              </article>
-
-              <article class="module-card">
-                <div class="module-icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M14 18a4 4 0 0 1 6.5 0"/></svg>
-                </div>
-                <h3>Duo / Familiar</h3>
-                <p>Invita a otras personas y administra finanzas compartidas.</p>
-              </article>
-
-              <article class="module-card">
-                <div class="module-icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16"/><path d="m7 15 3-4 3 2 4-6"/></svg>
-                </div>
-                <h3>Presupuestos</h3>
-                <p>Define límites mensuales y mide cómo vas respecto a ellos.</p>
-              </article>
-
-              <article class="module-card ai-module">
-                <div class="module-icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg>
-                </div>
-                <h3>Asistente IA</h3>
-                <p>Obtén análisis, alertas y recomendaciones personalizadas.</p>
-              </article>
-            </div>
-          </section>
-        </main>
-      </div>
-    </section>
-  </main>
+        <section class="modules-card">
+          <div class="section-title">
+            <h3>Comienza a organizar tus finanzas</h3>
+            <p>Estas serán las herramientas principales de tu cuenta.</p>
+          </div>
+          <div class="modules">
+            <article class="module"><div class="module-icon">↗</div><h4>Ingresos</h4><p>Registra sueldo, negocios y otras fuentes de ingreso.</p></article>
+            <article class="module"><div class="module-icon">↘</div><h4>Gastos</h4><p>Clasifica tus gastos personales y compartidos.</p></article>
+            <article class="module"><div class="module-icon">▣</div><h4>Tarjetas</h4><p>Controla saldos, corte y fechas de pago.</p></article>
+            <article class="module"><div class="module-icon">♧</div><h4>Duo / Familiar</h4><p>Invita personas y administra finanzas compartidas.</p></article>
+            <article class="module"><div class="module-icon">⌁</div><h4>Presupuestos</h4><p>Define límites mensuales y mide tu progreso.</p></article>
+            <article class="module"><div class="module-icon">✦</div><h4>Asistente IA</h4><p>Obtén análisis y recomendaciones personalizadas.</p></article>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>
