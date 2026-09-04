@@ -7,23 +7,107 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="login-container">
-    <section class="login-card">
-      <div class="logo">💰</div>
-      <h1>Finanzas App</h1>
-      <p class="subtitle">Organiza tus finanzas de forma sencilla.</p>
+  <main id="app">
+    <section id="login-screen" class="login-container">
+      <div class="login-card">
+        <div class="logo">💰</div>
+        <h1>Finanzas App</h1>
+        <p class="subtitle">Organiza tus finanzas de forma sencilla.</p>
 
-      <button id="google-login" class="login-button google-button">
-        <span class="google-icon">G</span>
-        <span>Continuar con Google</span>
-      </button>
+        <button id="google-login" class="login-button google-button">
+          <span class="google-icon">G</span>
+          <span>Continuar con Google</span>
+        </button>
 
-      <button id="apple-login" class="login-button apple-button" type="button">
-        <span></span>
-        <span>Continuar con Apple</span>
-      </button>
+        <button id="apple-login" class="login-button apple-button" type="button">
+          <span></span>
+          <span>Continuar con Apple</span>
+        </button>
 
-      <p id="status" class="status" aria-live="polite"></p>
+        <p id="login-status" class="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section id="dashboard-screen" class="dashboard-container hidden">
+      <header class="topbar">
+        <div>
+          <div class="brand">💰 Finanzas App</div>
+          <p id="welcome-text" class="welcome"></p>
+        </div>
+        <button id="logout-button" class="logout-button">Cerrar sesión</button>
+      </header>
+
+      <div class="dashboard-content">
+        <section class="hero">
+          <div>
+            <p class="eyebrow">TU ESPACIO FINANCIERO</p>
+            <h1>Bienvenido a Finanzas App 👋</h1>
+            <p>Desde aquí construiremos tu panel para ingresos, gastos, tarjetas, presupuestos y cuentas compartidas.</p>
+          </div>
+        </section>
+
+        <section class="summary-grid">
+          <article class="summary-card">
+            <span>💵</span>
+            <div>
+              <small>Ingresos</small>
+              <strong>$0.00</strong>
+            </div>
+          </article>
+
+          <article class="summary-card">
+            <span>💳</span>
+            <div>
+              <small>Gastos</small>
+              <strong>$0.00</strong>
+            </div>
+          </article>
+
+          <article class="summary-card">
+            <span>📊</span>
+            <div>
+              <small>Balance</small>
+              <strong>$0.00</strong>
+            </div>
+          </article>
+        </section>
+
+        <section class="modules">
+          <h2>Próximamente</h2>
+          <div class="module-grid">
+            <article class="module-card">
+              <span>💰</span>
+              <h3>Ingresos</h3>
+              <p>Registra y organiza tus fuentes de ingreso.</p>
+            </article>
+            <article class="module-card">
+              <span>🧾</span>
+              <h3>Gastos</h3>
+              <p>Controla tus gastos personales y compartidos.</p>
+            </article>
+            <article class="module-card">
+              <span>💳</span>
+              <h3>Tarjetas</h3>
+              <p>Fechas de corte, pago y gastos de cada tarjeta.</p>
+            </article>
+            <article class="module-card">
+              <span>👨‍👩‍👧</span>
+              <h3>Familia / Duo</h3>
+              <p>Comparte tus finanzas con otras personas.</p>
+            </article>
+            <article class="module-card">
+              <span>🎯</span>
+              <h3>Presupuestos</h3>
+              <p>Define límites y objetivos mensuales.</p>
+            </article>
+            <article class="module-card">
+              <span>🤖</span>
+              <h3>Asistente IA</h3>
+              <p>Analiza tus finanzas y encuentra oportunidades de mejora.</p>
+            </article>
+          </div>
+        </section>
+      </div>
     </section>
   </main>
 

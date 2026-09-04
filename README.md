@@ -1,13 +1,16 @@
-# Finanzas App — Google Login
+# Finanzas App — Google Login + Dashboard
 
-Versión de prueba con Google OAuth mediante Supabase.
+Esta versión agrega un dashboard inicial después de iniciar sesión.
 
 Configuración:
 - GitHub Pages: https://alexgasca27-cloud.github.io/finanzas-app/
-- Supabase: https://pghhvymhdfsfedppxquy.supabase.co
-- Google OAuth: habilitado
+- Supabase Auth: Google habilitado
 - Apple: pendiente
 
-La Publishable Key está configurada en `app.js`. Las Publishable Keys pueden utilizarse en el frontend; nunca se debe colocar una Secret Key/service_role en código público.
+La Publishable Key está en `app.js`. Es una clave pública para frontend. Nunca usar una Secret Key/service_role en el navegador.
 
-Después de subir los archivos a GitHub, prueba "Continuar con Google".
+Después de subir los archivos:
+1. Abre GitHub Pages.
+2. Si ya tenías una sesión, aparecerá directamente el dashboard.
+3. Si no tienes sesión, pulsa Continuar con Google.
+4. Puedes probar Cerrar sesión para volver al login.
