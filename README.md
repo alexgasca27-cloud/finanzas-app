@@ -9,3 +9,6 @@ Cambios V11:
 - El formulario de nueva tarjeta adapta los campos según el producto.
 - Kueski no solicita fecha de corte.
 - No requiere cambios en supabase.sql: usa `cut_day` y `due_day` ya existentes.
+
+
+V12: agrega financiamiento Kueski de 1 a 12 quincenas. Al registrar una compra con método Kueski se puede elegir el número de quincenas; el detalle calcula el importe por quincena y el próximo pago según la regla de fechas de Kueski. Ejecuta el bloque V12 de supabase.sql en el SQL Editor antes de probar compras Kueski.

@@ -39,3 +39,4 @@
 .card-schedule strong{color:#aab2be;font-weight:600}
 .schedule-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:600px){.card-schedule{font-size:10px;gap:10px}.schedule-fields{grid-template-columns:1fr}}
+.form-help{color:#707988;font-size:10px;line-height:1.4}
