@@ -90,8 +90,13 @@ function movementForm(ex=null){
  <label>Clasificación<select id="mShared"><option value="false">Personal</option><option value="true" ${ex?.is_shared?"selected":""}>Compartido</option></select></label>
  <label>Notas (opcional)<input id="mNotes" value="${esc(ex?.notes||"")}"></label>
  <div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Guardar</button></div></form>`);
+ const refreshConcepts=()=>{
+   const t=$("#mType").value;
+   const list=state.concepts.filter(c=>c.type===t);
+   $("#mConcept").innerHTML=`<option value="">Seleccionar...</option>${list.map(c=>`<option value="${esc(c.name)}" ${ex?.concept_name===c.name?"selected":""}>${esc(c.name)}</option>`).join("")}`;
+ };
  const refresh=()=>{const pm=$("#mPayment").value,w=$("#cardSelectWrap");if(["credit","department_store","kueski","card_payment"].includes(pm))w.innerHTML=`<label>Tarjeta / crédito<select id="mCard">${cards.map(c=>`<option value="${c.id}" ${ex?.card_id===c.id?"selected":""}>${esc(c.name)} · ${esc(c.product_type)}</option>`).join("")}</select></label>`;else w.innerHTML=""};
- $("#mType").onchange=()=>movementForm(ex);$("#mPayment").onchange=refresh;
+ $("#mType").onchange=refreshConcepts;$("#mPayment").onchange=refresh;
  if(ex)$("#mPayment").value=ex.movement_role==="card_payment"?"card_payment":ex.payment_method||"debit";refresh();
  $("#movementForm").onsubmit=async e=>{e.preventDefault();const pm=$("#mPayment").value,isPay=pm==="card_payment",role=isPay?"card_payment":pm==="credit"?"card_purchase":pm==="kueski"?"kueski_purchase":"normal";
  const payload={type:$("#mType").value,concept_name:$("#mConcept").value||null,amount:Number($("#mAmount").value),transaction_date:$("#mDate").value,payment_method:isPay?"debit":pm,is_shared:$("#mShared").value==="true",notes:$("#mNotes").value||null,movement_role:role,card_id:$("#mCard")?.value||null};
