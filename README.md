@@ -17,5 +17,3 @@
 - Historial de aportaciones por meta.
 - No requiere fecha objetivo manual.
 - Requiere ejecutar la sección V23 del `supabase.sql` una vez.
-
-V24: edición/eliminación de aportaciones y eliminación de metas; el progreso y fecha estimada se recalculan tras cambios.
