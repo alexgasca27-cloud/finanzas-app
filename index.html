@@ -3,27 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Finanzas</title>
-  <meta name="description" content="App de finanzas personales y compartidas">
+  <title>Finanzas App</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="app">
-    <section class="welcome-card">
-      <div class="logo">F</div>
-      <p class="eyebrow">FINANZAS</p>
-      <h1>Tu dinero, más claro.</h1>
-      <p class="subtitle">Estamos preparando tu espacio financiero personal y compartido.</p>
+  <main class="login-container">
+    <section class="login-card">
+      <div class="logo">💰</div>
+      <h1>Finanzas App</h1>
+      <p class="subtitle">Organiza tus finanzas de forma sencilla.</p>
 
-      <div class="actions">
-        <button class="primary" id="googleBtn">Continuar con Google</button>
-        <button class="secondary" id="appleBtn">Continuar con Apple</button>
-      </div>
+      <button id="google-login" class="login-button google-button">
+        <span class="google-icon">G</span>
+        <span>Continuar con Google</span>
+      </button>
 
-      <p class="status" id="status"></p>
+      <button id="apple-login" class="login-button apple-button" type="button">
+        <span></span>
+        <span>Continuar con Apple</span>
+      </button>
+
+      <p id="status" class="status" aria-live="polite"></p>
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 </body>
 </html>
