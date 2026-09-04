@@ -50,6 +50,29 @@ alter table public.cards add column if not exists workspace_id uuid references p
 alter table public.concepts add column if not exists workspace_id uuid references public.workspaces(id) on delete cascade;
 alter table public.savings_goals add column if not exists workspace_id uuid references public.workspaces(id) on delete cascade;
 
+-- V23: metas de ahorro dinámicas y aportaciones
+alter table public.savings_goals add column if not exists planned_amount numeric(14,2) not null default 0;
+alter table public.savings_goals add column if not exists frequency text not null default 'monthly';
+alter table public.savings_goals drop constraint if exists savings_goals_frequency_check;
+alter table public.savings_goals add constraint savings_goals_frequency_check check(frequency in ('monthly','biweekly'));
+
+create table if not exists public.savings_goal_contributions(
+ id uuid primary key default gen_random_uuid(),
+ user_id uuid not null references auth.users(id) on delete cascade,
+ workspace_id uuid references public.workspaces(id) on delete cascade,
+ goal_id uuid not null references public.savings_goals(id) on delete cascade,
+ amount numeric(14,2) not null check(amount>0),
+ contribution_date date not null default current_date,
+ note text,
+ created_at timestamptz not null default now()
+);
+
+alter table public.savings_goal_contributions enable row level security;
+drop policy if exists "goal contributions workspace data" on public.savings_goal_contributions;
+create policy "goal contributions workspace data" on public.savings_goal_contributions for all using(public.is_workspace_member(workspace_id,auth.uid())) with check(public.is_workspace_member(workspace_id,auth.uid()));
+grant select,insert,update,delete on public.savings_goal_contributions to authenticated;
+create index if not exists savings_goal_contributions_goal_idx on public.savings_goal_contributions(goal_id,contribution_date);
+
 -- Espacios individuales para datos existentes.
 insert into public.workspaces(name,type,owner_id)
 select coalesce(p.display_name,p.email,'Mis finanzas'),'individual',p.id

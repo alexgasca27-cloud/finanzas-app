@@ -1,7 +1,7 @@
 const SUPABASE_URL="https://pghhvymhdfsfedppxquy.supabase.co";
 const SUPABASE_KEY="sb_publishable_jhL89bDrMEJKsuStNkp0kw_daup7Rna";
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const state={user:null,profile:null,workspace:null,members:[],movements:[],cards:[],concepts:[],goals:[],month:new Date(),movementFilter:"all"};
+const state={user:null,profile:null,workspace:null,members:[],movements:[],cards:[],concepts:[],goals:[],goalContributions:[],month:new Date(),movementFilter:"all"};
 const $=s=>document.querySelector(s);
 const money=n=>new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(Number(n||0));
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
@@ -47,12 +47,13 @@ function updateWorkspaceUI(){
 }
 async function loadAll(){
  await ensureWorkspace();const id=state.workspace?.id;if(!id)return;
- const [m,c,co,g]=await Promise.all([
+ const [m,c,co,g,gc]=await Promise.all([
  db.from("movements").select("*").eq("workspace_id",id).order("created_at",{ascending:false}),
  db.from("cards").select("*").eq("workspace_id",id).order("created_at",{ascending:false}),
  db.from("concepts").select("*").eq("workspace_id",id).order("name"),
- db.from("savings_goals").select("*").eq("workspace_id",id).order("created_at",{ascending:false})]);
- state.movements=m.data||[];state.cards=c.data||[];state.concepts=co.data||[];state.goals=g.data||[];render();
+ db.from("savings_goals").select("*").eq("workspace_id",id).order("created_at",{ascending:false}),
+ db.from("savings_goal_contributions").select("*").eq("workspace_id",id).order("contribution_date",{ascending:false})]);
+ state.movements=m.data||[];state.cards=c.data||[];state.concepts=co.data||[];state.goals=g.data||[];state.goalContributions=gc.data||[];render();
 }
 function currentRows(){const k=monthKey(state.month);return state.movements.filter(x=>String(x.transaction_date).slice(0,7)===k)}
 function render(){ $("#currentMonthLabel").textContent=monthLabel(state.month);renderHome();renderMovements();renderCards();renderGoals();renderConcepts();renderSummary()}
@@ -78,7 +79,30 @@ function renderCards(){
    return `<article class="credit-card status-${s}" style="--card-neon:${s==="green"?"#b6ff00":s==="yellow"?"#ffe600":s==="orange"?"#ff8a00":"#ff3b5c"}" onclick="showCard('${c.id}')"><span class="card-type">${esc(c.product_type)}</span><h3>${esc(c.name)}</h3><div class="balance">${money(u)}</div><div class="bar"><i style="width:${p}%"></i></div><div class="card-foot"><span>Usado ${p.toFixed(0)}%</span><span>${money(Math.max(0,l-u))} disponible</span></div>${schedule}</article>`
  }).join("")||'<div class="empty panel">Todavía no tienes tarjetas.</div>';
 }
-function renderGoals(){$("#goalsGrid").innerHTML=state.goals.map(g=>{const p=Number(g.target_amount)?Math.min(100,Number(g.current_amount||0)/Number(g.target_amount)*100):0;return `<article class="goal"><h3>${esc(g.name)}</h3><div class="muted">${esc(g.target_date||"Sin fecha objetivo")}</div><div class="amount">${money(g.current_amount)} / ${money(g.target_amount)}</div><div class="bar"><i style="width:${p}%"></i></div><small>${p.toFixed(0)}% completado</small></article>`}).join("")||'<div class="empty panel">Crea tu primera meta.</div>'}
+function goalData(g){
+ const base=Number(g.current_amount||0);
+ const contribs=state.goalContributions.filter(x=>x.goal_id===g.id);
+ const contributed=contribs.reduce((s,x)=>s+Number(x.amount||0),0);
+ const saved=base+contributed;
+ const target=Number(g.target_amount||0);
+ const remaining=Math.max(0,target-saved);
+ const planned=Number(g.planned_amount||0);
+ const freq=g.frequency||"monthly";
+ let estimated=null;
+ if(remaining<=0){estimated=new Date();}
+ else if(planned>0){
+   const units=Math.ceil(remaining/planned);
+   const d=new Date();
+   if(freq==="biweekly") d.setDate(d.getDate()+units*14);
+   else d.setMonth(d.getMonth()+units);
+   estimated=d;
+ }
+ return {base,contribs,contributed,saved,target,remaining,planned,freq,estimated};
+}
+function goalEstimateText(d){if(d.remaining<=0)return "🎉 Meta alcanzada";if(!d.planned)return "Configura una aportación para calcular la fecha";return `Fecha estimada: <strong>${d.estimated.toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})}</strong>`}
+function renderGoals(){
+ $("#goalsGrid").innerHTML=state.goals.map(g=>{const d=goalData(g);const p=d.target?Math.min(100,d.saved/d.target*100):0;const freqLabel=d.freq==="biweekly"?"quincena":"mes";return `<article class="goal" onclick="showGoal('${g.id}')"><div class="goal-head"><div><h3>${esc(g.name)}</h3><small class="muted">Meta ${money(d.target)}</small></div><span class="goal-percent">${p.toFixed(0)}%</span></div><div class="amount">${money(d.saved)} <span>/ ${money(d.target)}</span></div><div class="bar"><i style="width:${p}%"></i></div><div class="goal-stats"><span>Faltan <strong>${money(d.remaining)}</strong></span><span>${d.planned?`${money(d.planned)} / ${freqLabel}`:"Sin aportación programada"}</span></div><div class="goal-estimate">${goalEstimateText(d)}</div><button type="button" class="secondary-btn goal-action" onclick="event.stopPropagation();contributionForm('${g.id}')">+ Registrar aportación</button></article>`}).join("")||'<div class="empty panel">Crea tu primera meta.</div>';
+}
 function conceptHTML(x){return `<div class="concept"><span>${esc(x.name)}</span><button class="icon-btn" onclick="deleteConcept('${x.id}')">×</button></div>`}
 function renderConcepts(){const i=state.concepts.filter(x=>x.type==="income"),e=state.concepts.filter(x=>x.type==="expense");$("#incomeConcepts").innerHTML=i.map(conceptHTML).join("")||'<div class="empty">Sin conceptos.</div>';$("#expenseConcepts").innerHTML=e.map(conceptHTML).join("")||'<div class="empty">Sin conceptos.</div>'}
 function renderSummary(){
@@ -148,7 +172,9 @@ async function deleteCard(id){
 }
 function conceptForm(){showModal(`<form class="form" id="conceptForm"><h3>Nuevo concepto</h3><label>Tipo<select id="coType"><option value="expense">Gasto</option><option value="income">Ingreso</option></select></label><label>Nombre<input id="coName" required placeholder="Ej. Costco"></label><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Guardar</button></div></form>`);$("#conceptForm").onsubmit=async e=>{e.preventDefault();const {error}=await db.from("concepts").insert({user_id:state.user.id,workspace_id:state.workspace.id,type:$("#coType").value,name:$("#coName").value.trim()});if(error)return notify(error.message);closeModal();loadAll()}}
 async function deleteConcept(id){if(!confirm("¿Eliminar este concepto?"))return;const {error}=await db.from("concepts").delete().eq("id",id);if(error)return notify(error.message);loadAll()}
-function goalForm(){showModal(`<form class="form" id="goalForm"><h3>Nueva meta de ahorro</h3><label>Nombre<input id="gName" required></label><label>Meta<input id="gTarget" type="number" min="1" required></label><label>Fecha objetivo<input id="gDate" type="date"></label><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Guardar</button></div></form>`);$("#goalForm").onsubmit=async e=>{e.preventDefault();const {error}=await db.from("savings_goals").insert({user_id:state.user.id,workspace_id:state.workspace.id,name:$("#gName").value,target_amount:Number($("#gTarget").value),target_date:$("#gDate").value||null});if(error)return notify(error.message);closeModal();loadAll()}}
+function goalForm(){showModal(`<form class="form" id="goalForm"><h3>Nueva meta de ahorro</h3><p class="muted tiny">La fecha estimada se calcula automáticamente según tu meta y tu aportación programada.</p><label>Nombre<input id="gName" required placeholder="Ej. Fondo para casa"></label><label>Meta<input id="gTarget" type="number" min="1" step="0.01" required placeholder="90000"></label><label>Aportación programada<input id="gPlanned" type="number" min="0" step="0.01" required placeholder="1000"></label><label>Frecuencia<select id="gFreq"><option value="monthly">Mensual</option><option value="biweekly">Quincenal</option></select></label><label>Ahorro inicial (opcional)<input id="gInitial" type="number" min="0" step="0.01" value="0"></label><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Guardar</button></div></form>`);$("#goalForm").onsubmit=async e=>{e.preventDefault();const {error}=await db.from("savings_goals").insert({user_id:state.user.id,workspace_id:state.workspace.id,name:$("#gName").value.trim(),target_amount:Number($("#gTarget").value),current_amount:Number($("#gInitial").value||0),planned_amount:Number($("#gPlanned").value||0),frequency:$("#gFreq").value});if(error)return notify(error.message);closeModal();loadAll()}}
+function showGoal(id){const g=state.goals.find(x=>x.id===id);if(!g)return;const d=goalData(g);const freqLabel=d.freq==="biweekly"?"quincena":"mes";const rows=d.contribs.map(x=>`<div class="goal-contribution"><div><strong>${money(x.amount)}</strong><small>${esc(x.contribution_date)}${x.note?` · ${esc(x.note)}`:""}</small></div></div>`).join("")||'<div class="empty">Todavía no hay aportaciones registradas.</div>';showModal(`<div class="goal-detail"><div class="detail-header"><div><span class="card-type">META DE AHORRO</span><h3>${esc(g.name)}</h3></div><div class="detail-usage">${Math.min(100,d.target?d.saved/d.target*100:0).toFixed(0)}%<small>avance</small></div></div><div class="detail-summary"><div><small>Meta</small><strong>${money(d.target)}</strong></div><div><small>Ahorrado</small><strong>${money(d.saved)}</strong></div><div><small>Falta</small><strong>${money(d.remaining)}</strong></div></div><div class="goal-progress-big"><div class="bar"><i style="width:${Math.min(100,d.target?d.saved/d.target*100:0)}%"></i></div></div><div class="goal-estimate-large">${goalEstimateText(d)}${d.planned?`<small>Con ${money(d.planned)} por ${freqLabel}, recalculada automáticamente con cada aportación.</small>`:""}</div><div class="form-actions"><button class="primary-btn" onclick="closeModal();contributionForm('${g.id}')">+ Registrar aportación</button><button class="danger-btn" onclick="closeModal()">Cerrar</button></div><div class="detail-section"><div class="detail-section-title">💰 Aportaciones</div><div class="goal-contributions">${rows}</div></div></div>`)}
+function contributionForm(goalId){const g=state.goals.find(x=>x.id===goalId);if(!g)return;showModal(`<form class="form" id="contributionForm"><h3>Registrar aportación</h3><p class="muted">La fecha estimada se actualizará automáticamente.</p><label>Monto<input id="gcAmount" type="number" min="0.01" step="0.01" required></label><label>Fecha<input id="gcDate" type="date" value="${todayISO()}" required></label><label>Nota (opcional)<input id="gcNote" placeholder="Ej. Aportación extraordinaria"></label><div class="form-actions"><button type="button" class="danger-btn" onclick="closeModal()">Cancelar</button><button class="primary-btn">Guardar aportación</button></div></form>`);$("#contributionForm").onsubmit=async e=>{e.preventDefault();const amount=Number($("#gcAmount").value);const {error}=await db.from("savings_goal_contributions").insert({user_id:state.user.id,workspace_id:state.workspace.id,goal_id:goalId,amount,contribution_date:$("#gcDate").value,note:$("#gcNote").value.trim()||null});if(error)return notify(error.message);closeModal();await loadAll();showGoal(goalId)}}
 function dateObj(v){const [y,m,d]=String(v).slice(0,10).split("-").map(Number);return y&&m&&d?new Date(y,m-1,d):null}
 function isoDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function clampDay(y,m,day){return Math.min(day,new Date(y,m,0).getDate())}

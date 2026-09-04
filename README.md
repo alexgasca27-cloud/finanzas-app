@@ -8,3 +8,12 @@
 - El periodo no se reinicia artificialmente a cero: las compras posteriores al corte permanecen como deuda del periodo actual.
 - Una vez pagado, el estado se muestra como “✓ Pagado”.
 - No requiere SQL nuevo.
+
+
+## V23 · Ahorro dinámico
+- Metas con monto objetivo, aportación programada y frecuencia mensual/quincenal.
+- Fecha estimada calculada automáticamente desde el ahorro acumulado y la aportación programada.
+- Aportaciones extraordinarias actualizan el saldo y la fecha estimada.
+- Historial de aportaciones por meta.
+- No requiere fecha objetivo manual.
+- Requiere ejecutar la sección V23 del `supabase.sql` una vez.
