@@ -69,3 +69,8 @@
 .secondary-btn:hover{border-color:#b6ff00;color:#b6ff00}
 .card-actions .danger-btn{cursor:pointer;padding:10px 12px}
 @media(max-width:600px){.detail-header-actions{flex-direction:column;align-items:flex-end}.card-actions{flex-direction:column;width:100%}.card-actions button{width:100%}}
+
+/* V20.1 — acciones de tarjeta siempre visibles */
+.card-detail-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:-4px;margin-bottom:2px}
+.card-detail-actions .secondary-btn,.card-detail-actions .danger-btn{font-weight:800;padding:10px 14px}
+@media(max-width:600px){.card-detail-actions{display:grid;grid-template-columns:1fr 1fr}.card-detail-actions button{width:100%}}
