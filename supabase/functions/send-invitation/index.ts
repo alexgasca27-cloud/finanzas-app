@@ -56,11 +56,14 @@ export default {
         );
       }
 
-      // IMPORTANT: userClaims exposes the authenticated user's `id`.
-      // The JWT's `sub` lives in jwtClaims. Using userClaims.id avoids the
-      // false "No se pudo identificar al usuario" error.
-      const userId = ctx.userClaims?.id;
-      const callerEmail = normalizeEmail(ctx.userClaims?.email ?? "");
+      // Use the verified JWT claims for the authenticated identity.
+      // `sub` is the Supabase Auth user UUID and is always part of a valid JWT.
+      // `userClaims` is useful too, but using jwtClaims.sub is the most direct
+      // and robust way to identify the caller.
+      const userId = ctx.jwtClaims?.sub;
+      const callerEmail = normalizeEmail(
+        String(ctx.jwtClaims?.email ?? ctx.userClaims?.email ?? "")
+      );
 
       if (!userId) {
         return Response.json(

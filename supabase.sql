@@ -1,3 +1,4 @@
+-- V30: no additional SQL required for invitation sending frontend fix.
 -- Finanzas App V5
 create extension if not exists pgcrypto;
 
